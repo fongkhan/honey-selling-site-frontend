@@ -1,6 +1,7 @@
 ---
 import { medusa } from '~/lib/medusa';
 import { payload } from '~/lib/payload';
+import '../styles/global.css';
 
 const [{ products }, { docs: pages }] = await Promise.all([
   medusa.products().catch(() => ({ products: [] as Awaited<ReturnType<typeof medusa.products>>['products'] })),
@@ -16,21 +17,45 @@ const home = pages[0];
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{home?.seo?.title ?? 'Miel artisanal'}</title>
     <meta name="description" content={home?.seo?.description ?? 'Miel artisanal direct producteur.'} />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
   </head>
   <body>
-    <header>
-      <h1>{home?.title ?? 'Miel artisanal'}</h1>
+    <header class="hero">
+      <img src="/honey-hero.png" alt="Miel artisanal" class="hero-img" />
+      <div class="hero-content">
+        <h1 class="hero-title">{home?.title ?? 'Miel Artisanal Premium'}</h1>
+        <p class="hero-subtitle">Découvrez notre sélection de miels purs et naturels, récoltés avec passion.</p>
+        <button class="btn">Découvrir</button>
+      </div>
     </header>
     <main>
-      <section>
-        <h2>Nos miels</h2>
-        <ul>
-          {products.map((p) => (
-            <li>
-              <a href={`/produits/${p.handle}`}>{p.title}</a>
-            </li>
-          ))}
-        </ul>
+      <section class="products-section">
+        <h2 class="section-title">Notre Sélection</h2>
+        <div class="products-grid">
+          {products.length > 0 ? products.map((p) => (
+            <div class="product-card">
+              <h3 class="product-title">{p.title}</h3>
+              <a href={`/produits/${p.handle}`} class="product-link">Voir les détails</a>
+            </div>
+          )) : (
+            <>
+              <div class="product-card">
+                <h3 class="product-title">Miel de Lavande</h3>
+                <a href="#" class="product-link">Voir les détails</a>
+              </div>
+              <div class="product-card">
+                <h3 class="product-title">Miel de Châtaignier</h3>
+                <a href="#" class="product-link">Voir les détails</a>
+              </div>
+              <div class="product-card">
+                <h3 class="product-title">Miel d'Acacia</h3>
+                <a href="#" class="product-link">Voir les détails</a>
+              </div>
+            </>
+          )}
+        </div>
       </section>
     </main>
   </body>
