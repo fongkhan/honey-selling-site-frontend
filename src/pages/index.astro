@@ -1,0 +1,37 @@
+---
+import { medusa } from '~/lib/medusa';
+import { payload } from '~/lib/payload';
+
+const [{ products }, { docs: pages }] = await Promise.all([
+  medusa.products().catch(() => ({ products: [] as Awaited<ReturnType<typeof medusa.products>>['products'] })),
+  payload.page('home').catch(() => ({ docs: [] })),
+]);
+
+const home = pages[0];
+---
+
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{home?.seo?.title ?? 'Miel artisanal'}</title>
+    <meta name="description" content={home?.seo?.description ?? 'Miel artisanal direct producteur.'} />
+  </head>
+  <body>
+    <header>
+      <h1>{home?.title ?? 'Miel artisanal'}</h1>
+    </header>
+    <main>
+      <section>
+        <h2>Nos miels</h2>
+        <ul>
+          {products.map((p) => (
+            <li>
+              <a href={`/produits/${p.handle}`}>{p.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

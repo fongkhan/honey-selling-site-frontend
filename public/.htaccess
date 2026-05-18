@@ -1,0 +1,33 @@
+# Apache config for o2switch static deployment.
+# This file is preserved across deploys by build_astro.sh.
+
+# Force HTTPS
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Pretty URLs for Astro directory-format output
+DirectoryIndex index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.+?)/?$ $1/index.html [L]
+
+# Long cache for hashed Astro assets
+<FilesMatch "\.(?:css|js|woff2?|png|jpg|jpeg|svg|webp|avif)$">
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+
+# No cache for HTML
+<FilesMatch "\.html$">
+  Header set Cache-Control "no-cache, must-revalidate"
+</FilesMatch>
+
+# Block direct access to source maps in prod (optional)
+<FilesMatch "\.map$">
+  Require all denied
+</FilesMatch>
+
+# Security headers
+Header set X-Content-Type-Options "nosniff"
+Header set Referrer-Policy "strict-origin-when-cross-origin"
+Header set X-Frame-Options "SAMEORIGIN"
