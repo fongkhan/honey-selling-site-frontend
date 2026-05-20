@@ -7,6 +7,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — versioning:
 ## [Unreleased]
 
 ### Added
+- Rendu dynamique des photos de produits sur tout le site (page d'accueil, catalogue de la boutique, et fiches produits) avec fallback automatique sur la première image de la galerie de Medusa si le thumbnail n'est pas renseigné, évitant ainsi l'émoji de repli par défaut 🍯 lorsque des photos existent.
 - Données Structurées JSON-LD intégrées à la volée dans le `<head>` de la mise en page générale (`Layout.astro`) de type `Store`, et sur les fiches produits (`boutique/[handle]` et `produits/[handle]`) de type `Product` pour une indexation sémantique (SEO) optimale.
 - Cartes de produits de la page d'accueil cliquables : enveloppement du visuel pot de miel 🍯 et du titre `h3` dans des balises `<a>` pointant vers `/boutique/[handle]` (dans le bloc CMS et le repli HTML).
 - Barre de navigation auto-adaptative (Dynamic Navbar) : récupération, filtrage (exclusion de `home`/`boutique`) et tri automatique (via `navbarOrder`) des pages du CMS dans `Layout.astro`, avec fallback raffiné.
@@ -15,6 +16,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — versioning:
 - Formulaire interactif de commande (Checkout) complet en 4 étapes (`/commande`) câblé en temps réel avec Medusa v2 (contact, adresse, livraison, paiement par défaut `pp_system_default`).
 
 ### Fixed
+- JavaScript de la galerie d'images sur la fiche produit : correction du bug de closure en récupérant dynamiquement le nœud d'image principal dans le DOM à chaque clic, garantissant une mise à jour robuste et sans duplication.
 - Crash de la compilation statique Astro en downgradant `@astrojs/sitemap` de `3.7.2` à `3.6.0` (la version 3.7+ requérant Astro 5).
 - Multiplication erronée des prix des miels : suppression de la division par 100 sur l'affichage des produits, variantes, panier, commande et accueil pour uniformiser avec les unités majeures de Medusa.
 - Optimisation esthétique des boutons d'étapes du checkout (interdiction du retour à la ligne du texte, taille fixe des chevrons SVG).

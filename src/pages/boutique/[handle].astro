@@ -96,10 +96,36 @@ const formattedDefaultPrice = new Intl.NumberFormat('fr-FR', { style: 'currency'
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
       <!-- Visuel Pot & Métadonnées visuelles (Gauche) -->
       <div class="lg:col-span-6 space-y-6">
-        <div class="bg-gradient-to-b from-amber-50 to-amber-100/50 rounded-[32px] border border-amber-900/5 p-8 flex items-center justify-center text-[10rem] h-[450px] shadow-sm relative overflow-hidden">
-          <div class="absolute top-4 left-4 px-3 py-1 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-full uppercase tracking-wider">Bio</div>
-          <span class="honey-glow transition-transform duration-500 hover:scale-110 select-none">🍯</span>
+        <div class="bg-gradient-to-b from-amber-50 to-amber-100/50 rounded-[32px] border border-amber-900/5 p-8 flex items-center justify-center h-[450px] shadow-sm relative overflow-hidden" id="main-product-image-container">
+          <div class="absolute top-4 left-4 px-3 py-1 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-full uppercase tracking-wider z-10">Bio</div>
+          {(() => {
+            const mainImgUrl = displayProduct.thumbnail || (displayProduct.images && displayProduct.images.length > 0 ? displayProduct.images[0].url : null);
+            return mainImgUrl ? (
+              <img 
+                id="main-product-image"
+                src={mainImgUrl} 
+                alt={displayProduct.title} 
+                class="max-w-full max-h-full object-contain transition-transform duration-500 hover:scale-105" 
+              />
+            ) : (
+              <span id="main-product-emoji" class="text-[10rem] honey-glow transition-transform duration-500 hover:scale-110 select-none">🍯</span>
+            );
+          })()}
         </div>
+
+        {displayProduct.images && displayProduct.images.length > 0 && (
+          <div class="flex flex-wrap gap-3 justify-center pt-2">
+            {displayProduct.images.map((img: any, idx: number) => (
+              <button 
+                class={`w-16 h-16 rounded-xl border overflow-hidden transition-all duration-300 p-1 bg-white cursor-pointer gallery-thumb-btn ${idx === 0 ? 'border-amber-500 ring-1 ring-amber-500/20' : 'border-stone-200 hover:border-amber-500/40'}`}
+                data-src={img.url}
+                aria-label={`Afficher l'image ${idx + 1}`}
+              >
+                <img src={img.url} alt="" class="w-full h-full object-cover rounded-lg" />
+              </button>
+            ))}
+          </div>
+        )}
 
         <!-- Fiche technique CMS (Carrousel ou Liste) -->
         <div class="grid grid-cols-2 gap-4">
@@ -251,6 +277,43 @@ const formattedDefaultPrice = new Intl.NumberFormat('fr-FR', { style: 'currency'
   document.getElementById('qty-plus')?.addEventListener('click', () => {
     quantity++;
     if (qtyDisplay) qtyDisplay.innerText = quantity.toString();
+  });
+
+  // Gestion de la Galerie d'images
+  const mainImageContainer = document.getElementById('main-product-image-container');
+
+  document.querySelectorAll('.gallery-thumb-btn').forEach((btn: any) => {
+    btn.addEventListener('click', () => {
+      const src = btn.dataset.src;
+      if (!src) return;
+
+      // Retirer le style actif
+      document.querySelectorAll('.gallery-thumb-btn').forEach((b: any) => {
+        b.classList.remove('border-amber-500', 'ring-1', 'ring-amber-500/20');
+        b.classList.add('border-stone-200');
+      });
+
+      // Ajouter le style actif
+      btn.classList.add('border-amber-500', 'ring-1', 'ring-amber-500/20');
+      btn.classList.remove('border-stone-200');
+
+      // Récupérer dynamiquement l'image et l'émoji courants
+      const currentImage: any = document.getElementById('main-product-image');
+      const currentEmoji = document.getElementById('main-product-emoji');
+
+      // Mettre à jour l'image principale
+      if (currentImage) {
+        currentImage.src = src;
+      } else if (currentEmoji && mainImageContainer) {
+        const newImg = document.createElement('img');
+        newImg.id = 'main-product-image';
+        newImg.src = src;
+        newImg.alt = "Miel";
+        newImg.className = 'max-w-full max-h-full object-contain transition-transform duration-500 hover:scale-105';
+        currentEmoji.remove();
+        mainImageContainer.appendChild(newImg);
+      }
+    });
   });
 
   // Déclencher mise au panier

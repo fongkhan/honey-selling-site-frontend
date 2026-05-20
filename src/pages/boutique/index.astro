@@ -169,8 +169,19 @@ const displayProducts = products.length > 0 ? products : fallbackProducts;
                   </div>
 
                   <a href={`/boutique/${p.handle}`} class="block">
-                    <div class="h-44 bg-amber-50 rounded-2xl flex items-center justify-center text-5xl group-hover:scale-105 transition-transform duration-500 mb-5 border border-amber-100">
-                      🍯
+                    <div class="h-44 bg-amber-50 rounded-2xl flex items-center justify-center overflow-hidden mb-5 border border-amber-100 relative group-hover:scale-105 transition-transform duration-500">
+                      {(() => {
+                        const productImg = p.thumbnail || (p.images && p.images.length > 0 ? p.images[0].url : null);
+                        return productImg ? (
+                          <img 
+                            src={productImg} 
+                            alt={p.title} 
+                            class="w-full h-full object-cover" 
+                          />
+                        ) : (
+                          <span class="text-5xl select-none">🍯</span>
+                        );
+                      })()}
                     </div>
                   </a>
 

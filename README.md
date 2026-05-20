@@ -92,3 +92,5 @@ frontend/
 3. **Routeur Universel (`[slug].astro`)** :
    Il pré-génère statiquement à la compilation toutes les pages créées dans le CMS en convertissant les 8 structures de blocs visuels complexes (Héros, Témoignages, Engagements, Articles récents...) pour une performance SEO optimale.
 
+4. **Rendu d'Images Produits Dynamique & Intelligent** :
+   Les images s'adaptent de manière réactive sur l'ensemble du site. Si le champ de miniature principal du produit dans Medusa n'est pas renseigné, le site bascule intelligemment sur la première image de sa galerie pour éviter d'afficher un émoji de repli par défaut 🍯. Les fiches produits intègrent également une galerie interactive avec changement d'image instantané côté client.

@@ -334,8 +334,19 @@ const pageTitle = homePage?.seo?.title ?? "Miel Artisanal d'Exception Direct Api
                             </span>
                           </div>
                           <a href={`/boutique/${p.handle}`} class="block">
-                            <div class="h-48 bg-amber-50 rounded-2xl flex items-center justify-center text-6xl group-hover:scale-105 transition-transform duration-500 mb-6 border border-amber-100">
-                              🍯
+                            <div class="h-48 bg-amber-50 rounded-2xl flex items-center justify-center overflow-hidden mb-6 border border-amber-100 relative group-hover:scale-105 transition-transform duration-500">
+                              {(() => {
+                                const productImg = p.thumbnail || (p.images && p.images.length > 0 ? p.images[0].url : null);
+                                return productImg ? (
+                                  <img 
+                                    src={productImg} 
+                                    alt={p.title} 
+                                    class="w-full h-full object-cover" 
+                                  />
+                                ) : (
+                                  <span class="text-6xl select-none">🍯</span>
+                                );
+                              })()}
                             </div>
                           </a>
                           <a href={`/boutique/${p.handle}`} class="block group">
@@ -553,8 +564,19 @@ const pageTitle = homePage?.seo?.title ?? "Miel Artisanal d'Exception Direct Api
                     <span class="text-xs text-stone-400 font-medium">🍯 Cru Artisanal</span>
                   </div>
                   <a href={`/boutique/${p.handle}`} class="block">
-                    <div class="h-48 bg-amber-50 rounded-2xl flex items-center justify-center text-6xl group-hover:scale-105 transition-transform duration-500 mb-6 border border-amber-100">
-                      🍯
+                    <div class="h-48 bg-amber-50 rounded-2xl flex items-center justify-center overflow-hidden mb-6 border border-amber-100 relative group-hover:scale-105 transition-transform duration-500">
+                      {(() => {
+                        const productImg = p.thumbnail || (p.images && p.images.length > 0 ? p.images[0].url : null);
+                        return productImg ? (
+                          <img 
+                            src={productImg} 
+                            alt={p.title} 
+                            class="w-full h-full object-cover" 
+                          />
+                        ) : (
+                          <span class="text-6xl select-none">🍯</span>
+                        );
+                      })()}
                     </div>
                   </a>
                   <a href={`/boutique/${p.handle}`} class="block group">
