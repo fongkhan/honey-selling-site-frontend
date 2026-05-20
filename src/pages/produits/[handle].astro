@@ -19,6 +19,21 @@ const price = variant?.calculated_price;
     <meta charset="utf-8" />
     <title>{product.title}</title>
     <meta name="description" content={product.subtitle ?? product.title} />
+
+    <!-- JSON-LD Product Schema for SEO -->
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": product.title,
+      "description": product.description ?? product.subtitle,
+      "offers": {
+        "@type": "Offer",
+        "price": variant?.calculated_price?.calculated_amount ?? 7.50,
+        "priceCurrency": variant?.calculated_price?.currency_code?.toUpperCase() ?? 'EUR',
+        "availability": "https://schema.org/InStock",
+        "url": Astro.url.href
+      }
+    })} />
   </head>
   <body>
     <article>

@@ -67,6 +67,21 @@ if (settings?.favicon && typeof settings.favicon === 'object' && settings.favico
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet" />
+
+    <!-- JSON-LD Structured Data for SEO -->
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Store",
+      "name": siteName,
+      "description": description,
+      "url": Astro.url.origin,
+      "logo": Astro.url.origin + faviconUrl,
+      "priceRange": "$$",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "FR"
+      }
+    })} />
   </head>
   <body class="bg-[#fdfbf7] text-[#1c1917] flex flex-col min-h-screen">
     

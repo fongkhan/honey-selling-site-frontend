@@ -71,6 +71,20 @@ const formattedDefaultPrice = new Intl.NumberFormat('fr-FR', { style: 'currency'
 ---
 
 <Layout title={`${displayProduct.title} — Miel Biologique`}>
+  <!-- JSON-LD Product Schema for SEO -->
+  <script type="application/ld+json" is:inline set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": displayProduct.title,
+    "description": displayProduct.description,
+    "offers": {
+      "@type": "Offer",
+      "price": defaultPrice,
+      "priceCurrency": defaultCurrency,
+      "availability": "https://schema.org/InStock",
+      "url": Astro.url.href
+    }
+  })} />
   
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <!-- Lien de retour -->
