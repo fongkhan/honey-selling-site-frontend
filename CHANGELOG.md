@@ -7,11 +7,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — versioning:
 ## [Unreleased]
 
 ### Added
-- Dynamic layout blocks rendering engine inside `src/pages/index.astro` and `src/pages/histoire.astro` to map dynamic CMS blocks (`HeroBlock`, `ValuesBlock`, `StoryBlock`, `EngagementsBlock`, `QuoteBlock`, `FeaturedProductsBlock`, `LatestPostsBlock`) to exact frontend visual components.
-- Lexical JSON dynamic parsing integration inside `src/pages/recettes-bienfaits/[slug].astro` using the `lexicalToHtml` utility to render Payload v3 editor outputs.
-- Fully dynamic blog listing at `src/pages/recettes-bienfaits/index.astro` that pulls chronological post docs from the CMS and displays them seamlessly.
-- Robust static fallback mechanisms across all pages (Home, Histoire, Blog, Post Details) to guarantee that if the CMS is offline, the site falls back to static content.
-- Initial Astro 4 SSG scaffold (`output: 'static'`).
+- Cartes de produits de la page d'accueil cliquables : enveloppement du visuel pot de miel 🍯 et du titre `h3` dans des balises `<a>` pointant vers `/boutique/[handle]` (dans le bloc CMS et le repli HTML).
+- Barre de navigation auto-adaptative (Dynamic Navbar) : récupération, filtrage (exclusion de `home`/`boutique`) et tri automatique (via `navbarOrder`) des pages du CMS dans `Layout.astro`, avec fallback raffiné.
+- Routeur universel catch-all à la racine (`src/pages/[slug].astro`) pre-générant à la compilation (SSG) toutes les pages éditées dans Payload.
+- Prise en charge des 8 types de blocs de mise en page CMS (`hero`, `pageHeader`, `values`, `story`, `engagements`, `quote`, `featuredProducts`, `latestPosts`) dans le rendu dynamique du routeur.
+- Formulaire interactif de commande (Checkout) complet en 4 étapes (`/commande`) câblé en temps réel avec Medusa v2 (contact, adresse, livraison, paiement par défaut `pp_system_default`).
+
+### Fixed
+- Crash de la compilation statique Astro en downgradant `@astrojs/sitemap` de `3.7.2` à `3.6.0` (la version 3.7+ requérant Astro 5).
+- Multiplication erronée des prix des miels : suppression de la division par 100 sur l'affichage des produits, variantes, panier, commande et accueil pour uniformiser avec les unités majeures de Medusa.
+- Optimisation esthétique des boutons d'étapes du checkout (interdiction du retour à la ligne du texte, taille fixe des chevrons SVG).
 - Tailwind CSS integration.
 - `src/lib/payload.ts` — REST client for Payload CMS content (pages, posts).
 - `src/lib/medusa.ts` — Store API client for Medusa products.

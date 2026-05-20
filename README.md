@@ -68,9 +68,27 @@ frontend/
 │   └── .htaccess            preserved across deploys
 └── src/
     ├── pages/               Astro routes (SSG)
+    │   ├── boutique/        
+    │   │   ├── index.astro  Catalogue géré via Payload CMS
+    │   │   └── [handle].astro Fiche produit avec détails Medusa + bienfaits CMS
+    │   ├── [slug].astro     Routeur universel pour pages dynamiques éditables
+    │   ├── commande.astro   Formulaire de checkout en 4 étapes
+    │   └── index.astro      Page d'accueil avec miels cliquables
     ├── lib/
-    │   ├── payload.ts       Payload REST client (build-time fetch)
+    │   ├── payload.ts       Payload REST client (build-time fetch + Types)
     │   └── medusa.ts        Medusa Store API client (build-time fetch)
     └── utils/
         └── lexicalRender.ts conversion Lexical → HTML
 ```
+
+## Fonctionnalités Avancées
+
+1. **Checkout en 4 étapes (`/commande`)** :
+   Un accordéon de commande fluide qui guide le client à travers les étapes de saisie de contact, d'adresse de livraison, de choix des modes de livraison et de simulation de paiement en temps réel avec le serveur e-commerce Medusa v2.
+
+2. **Navbar Auto-Adaptative** :
+   La barre de navigation se synchronise automatiquement avec les pages créées et configurées dans Payload CMS. Elle filtre la page d'accueil et la boutique pour n'afficher que vos pages institutionnelles (comme "Notre Histoire") triées selon l'ordre défini.
+
+3. **Routeur Universel (`[slug].astro`)** :
+   Il pré-génère statiquement à la compilation toutes les pages créées dans le CMS en convertissant les 8 structures de blocs visuels complexes (Héros, Témoignages, Engagements, Articles récents...) pour une performance SEO optimale.
+
