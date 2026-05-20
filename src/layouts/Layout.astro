@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import CartDrawer from '../components/CartDrawer.astro';
+import { payload } from '../lib/payload';
 
 interface Props {
   title: string;
@@ -13,6 +14,38 @@ const {
   description = "Miel artisanal d'exception récolté de manière écoresponsable, direct producteur.", 
   image = "/images/honey-social.jpg" 
 } = Astro.props;
+
+// Récupération des paramètres globaux et des pages depuis Payload CMS
+const [settings, pagesRes] = await Promise.all([
+  payload.settings().catch((err) => {
+    console.warn('[Astro Layout] Erreur fetch settings, utilisation des valeurs par défaut.', err.message);
+    return { siteName: "La Miellerie Royale", slogan: "Artisans Apiculteurs", favicon: null };
+  }),
+  payload.pages().catch((err) => {
+    console.warn('[Astro Layout] Erreur fetch pages pour la navbar, utilisation du fallback vide.', err.message);
+    return { docs: [] };
+  })
+]);
+
+const siteName = settings?.siteName || "La Miellerie Royale";
+const siteSlogan = settings?.slogan || "Artisans Apiculteurs";
+
+// Filtrer et trier les pages dynamiques à afficher dans la barre de navigation
+const dynamicNavPages = (pagesRes?.docs || []).length > 0
+  ? (pagesRes?.docs || [])
+      .filter(p => p.showInNavbar && p.slug !== 'home' && p.slug !== 'boutique')
+      .sort((a, b) => (a.navbarOrder ?? 0) - (b.navbarOrder ?? 0))
+  : [
+      { slug: 'histoire', title: 'Notre Histoire' }
+    ];
+
+const PAYLOAD_URL = import.meta.env.PAYLOAD_PUBLIC_URL ?? 'http://localhost:3000';
+let faviconUrl = "/favicon.svg";
+if (settings?.favicon && typeof settings.favicon === 'object' && settings.favicon.url) {
+  faviconUrl = settings.favicon.url.startsWith('http') 
+    ? settings.favicon.url 
+    : `${PAYLOAD_URL.replace(/\/$/, '')}${settings.favicon.url}`;
+}
 ---
 
 <!DOCTYPE html>
@@ -20,8 +53,8 @@ const {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" default="/favicon.ico" />
-    <title>{title} | La Miellerie Royale</title>
+    <link rel="icon" href={faviconUrl} />
+    <title>{title} | {siteName}</title>
     <meta name="description" content={description} />
     
     <!-- Open Graph -->
@@ -45,8 +78,8 @@ const {
           <a href="/" class="flex items-center gap-2.5 group">
             <span class="text-3xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">🐝</span>
             <div class="flex flex-col">
-              <span class="font-display font-semibold text-xl tracking-tight text-amber-900 group-hover:text-amber-700 transition-colors duration-300">La Miellerie Royale</span>
-              <span class="text-[10px] tracking-[0.2em] uppercase text-amber-700/80 font-medium -mt-0.5">Artisans Apiculteurs</span>
+              <span class="font-display font-semibold text-xl tracking-tight text-amber-900 group-hover:text-amber-700 transition-colors duration-300">{siteName}</span>
+              <span class="text-[10px] tracking-[0.2em] uppercase text-amber-700/80 font-medium -mt-0.5">{siteSlogan}</span>
             </div>
           </a>
 
@@ -54,7 +87,9 @@ const {
           <nav class="hidden md:flex items-center gap-8 font-medium text-amber-950/80">
             <a href="/boutique" class="hover:text-amber-600 transition-colors duration-200 relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-amber-500 after:transition-all hover:after:w-full">Notre Boutique</a>
             <a href="/recettes-bienfaits" class="hover:text-amber-600 transition-colors duration-200 relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-amber-500 after:transition-all hover:after:w-full">Blog & Vertus</a>
-            <a href="/histoire" class="hover:text-amber-600 transition-colors duration-200 relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-amber-500 after:transition-all hover:after:w-full">Notre Histoire</a>
+            {dynamicNavPages.map((page) => (
+              <a href={`/${page.slug}`} class="hover:text-amber-600 transition-colors duration-200 relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-amber-500 after:transition-all hover:after:w-full">{page.title}</a>
+            ))}
           </nav>
 
           <!-- Bouton Panier et Actions -->
@@ -94,7 +129,7 @@ const {
           <div class="flex flex-col gap-4">
             <div class="flex items-center gap-2">
               <span class="text-3xl">🐝</span>
-              <span class="font-display font-semibold text-xl tracking-tight text-white">La Miellerie Royale</span>
+              <span class="font-display font-semibold text-xl tracking-tight text-white">{siteName}</span>
             </div>
             <p class="text-sm text-stone-400">
               Producteurs passionnés de miel biologique d'exception. Engagés dans la protection de la biodiversité et de nos chères abeilles.
@@ -130,7 +165,7 @@ const {
         </div>
         
         <div class="border-t border-stone-800 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-500 gap-4">
-          <p>© {new Date().getFullYear()} La Miellerie Royale. Conçu avec passion.</p>
+          <p>© {new Date().getFullYear()} {siteName}. Conçu avec passion.</p>
           <div class="flex gap-6">
             <a href="#" class="hover:text-stone-400 transition-colors">Mentions Légales</a>
             <a href="#" class="hover:text-stone-400 transition-colors">CGV</a>

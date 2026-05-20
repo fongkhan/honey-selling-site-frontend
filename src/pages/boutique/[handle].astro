@@ -64,8 +64,8 @@ const fallbackMetadata = {
 const displayMeta = metadata || fallbackMetadata;
 
 // Prix formaté par défaut pour la première variante
-const defaultVariant = displayProduct.variants[0];
-const defaultPrice = (defaultVariant?.calculated_price?.calculated_amount ?? 750) / 100;
+const defaultVariant = displayProduct.variants?.[0];
+const defaultPrice = defaultVariant?.calculated_price?.calculated_amount ?? 7.50;
 const defaultCurrency = defaultVariant?.calculated_price?.currency_code?.toUpperCase() ?? 'EUR';
 const formattedDefaultPrice = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: defaultCurrency }).format(defaultPrice);
 ---
@@ -129,8 +129,8 @@ const formattedDefaultPrice = new Intl.NumberFormat('fr-FR', { style: 'currency'
         <div class="space-y-4 pt-6 border-t border-amber-900/5">
           <h3 class="text-xs font-semibold uppercase tracking-wider text-stone-400">Sélectionner le format</h3>
           <div class="flex flex-wrap gap-3">
-            {displayProduct.variants.map((v, i) => {
-              const vPrice = (v.calculated_price?.calculated_amount ?? 750) / 100;
+            {(displayProduct.variants || []).map((v, i) => {
+              const vPrice = v.calculated_price?.calculated_amount ?? 7.50;
               const formattedVPrice = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: defaultCurrency }).format(vPrice);
               return (
                 <button

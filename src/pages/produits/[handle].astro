@@ -28,7 +28,7 @@ const price = variant?.calculated_price;
       {price && (
         <p>
           <strong>
-            {(price.calculated_amount / 100).toLocaleString('fr-FR', {
+            {price.calculated_amount.toLocaleString('fr-FR', {
               style: 'currency',
               currency: price.currency_code.toUpperCase(),
             })}

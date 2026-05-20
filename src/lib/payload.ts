@@ -117,6 +117,8 @@ export type Page = {
   id: string;
   slug: string;
   title: string;
+  showInNavbar?: boolean;
+  navbarOrder?: number;
   content: any;
   layout?: LayoutBlock[];
   seo?: { title?: string; description?: string };
@@ -145,6 +147,15 @@ export type ProductMetadata = {
   recipes?: any;
 };
 
+export type SiteSettings = {
+  id?: string;
+  siteName: string;
+  slogan?: string;
+  favicon?: {
+    url?: string;
+  } | string | null;
+};
+
 export const payload = {
   pages: () => payloadFetch<PayloadList<Page>>('/pages?limit=200&depth=2'),
   page: (slug: string) =>
@@ -155,4 +166,5 @@ export const payload = {
   productsMetadata: () => payloadFetch<PayloadList<ProductMetadata>>('/products-metadata?limit=200&depth=2'),
   productMetadata: (handle: string) =>
     payloadFetch<PayloadList<ProductMetadata>>(`/products-metadata?where[medusaProductHandle][equals]=${encodeURIComponent(handle)}&depth=2`),
+  settings: () => payloadFetch<SiteSettings>('/globals/settings?depth=2'),
 };

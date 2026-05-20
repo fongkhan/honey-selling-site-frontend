@@ -105,6 +105,7 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? (typeof proces
   const cartFooter = document.getElementById('cart-footer');
   const subtotalText = document.getElementById('cart-subtotal');
   const totalText = document.getElementById('cart-total');
+  const checkoutBtn = document.getElementById('checkout-btn');
 
   // État local du panier
   let cartId = localStorage.getItem('medusa_cart_id');
@@ -130,6 +131,10 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? (typeof proces
   openBtn?.addEventListener('click', openCart);
   closeBtn?.addEventListener('click', closeCart);
   overlay?.addEventListener('click', closeCart);
+  checkoutBtn?.addEventListener('click', () => {
+    closeCart();
+    window.location.href = '/commande';
+  });
 
   // Appels API Medusa Store
   async function medusaFetch(path: string, options: RequestInit = {}) {
@@ -271,9 +276,9 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? (typeof proces
       cartBadge.innerText = totalItems.toString();
     }
 
-    // Formater le prix (reçoit les centimes du backend et les convertit en Euros)
+    // Formater le prix (Medusa v2 utilise directement l'unité principale)
     const formatPrice = (amount: number) => {
-      return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount / 100);
+      return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
     };
 
     if (subtotalText) subtotalText.innerText = formatPrice(cart.subtotal);

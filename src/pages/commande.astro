@@ -1,0 +1,971 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const MEDUSA_URL = import.meta.env.MEDUSA_PUBLIC_URL ?? 'http://localhost:9000';
+const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
+---
+
+<Layout title="Finaliser ma commande">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+    <!-- Fil d'Ariane élégant -->
+    <nav class="flex mb-8 text-sm font-medium text-stone-500 gap-2 items-center" aria-label="Breadcrumb">
+      <a href="/boutique" class="hover:text-amber-700 transition-colors">Notre Boutique</a>
+      <span class="text-stone-300">/</span>
+      <span class="text-amber-950 font-semibold">Finaliser la commande</span>
+    </nav>
+
+    <!-- Loader de chargement initial -->
+    <div id="checkout-initial-loader" class="flex flex-col items-center justify-center py-20 text-center space-y-4">
+      <div class="relative h-16 w-16">
+        <div class="absolute inset-0 rounded-full border-4 border-amber-100 border-t-amber-600 animate-spin"></div>
+        <span class="absolute inset-0 flex items-center justify-center text-xl">🐝</span>
+      </div>
+      <p class="text-stone-600 font-medium animate-pulse">Chargement de votre panier apicole...</p>
+    </div>
+
+    <!-- Message de panier vide (Masqué par défaut) -->
+    <div id="checkout-empty-state" class="hidden flex-col items-center justify-center py-20 text-center space-y-6 max-w-md mx-auto bg-white border border-amber-900/5 p-8 rounded-3xl shadow-sm">
+      <span class="text-6xl animate-bounce">🐝</span>
+      <h2 class="font-display text-2xl font-bold text-amber-950">Votre panier est vide</h2>
+      <p class="text-stone-500 text-sm">Vous devez ajouter des miels d'exception dans votre panier avant de pouvoir passer une commande.</p>
+      <a href="/boutique" class="inline-block px-8 py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors shadow-md hover:shadow-lg">
+        Retourner à la boutique
+      </a>
+    </div>
+
+    <!-- Conteneur Principal du Checkout (Masqué pendant le chargement) -->
+    <div id="checkout-main-container" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+      
+      <!-- Colonne de gauche : Formulaires de checkout -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- ÉTAPE 1 : COORDONNÉES DE CONTACT -->
+        <div class="bg-white border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm transition-all duration-300 relative overflow-hidden" id="step-1-card">
+          <!-- Indicateur d'étape -->
+          <div class="absolute top-0 right-0 h-2 w-full bg-amber-100/50" id="step-1-progress-bar"></div>
+          
+          <div class="flex items-start justify-between mb-6">
+            <div class="flex items-center gap-4">
+              <span class="h-8 w-8 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-sm">1</span>
+              <h3 class="font-display text-xl font-bold text-amber-950">Informations de contact</h3>
+            </div>
+            <button id="edit-step-1-btn" class="hidden text-xs font-semibold text-amber-700 hover:text-amber-900 underline transition-colors">Modifier</button>
+          </div>
+
+          <!-- Formulaire de contact -->
+          <div id="step-1-form-container" class="space-y-4">
+            <div>
+              <label for="contact-email" class="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2">Adresse Email</label>
+              <input 
+                type="email" 
+                id="contact-email" 
+                placeholder="jean.dupont@exemple.com" 
+                class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                required
+              />
+              <p class="text-[11px] text-stone-400 mt-1.5">Pour le suivi de votre livraison de miel et l'envoi de votre reçu.</p>
+            </div>
+            <button 
+              id="submit-step-1-btn"
+              class="w-full sm:w-auto px-6 py-2.5 sm:px-8 sm:py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors text-sm shadow-sm flex items-center justify-center gap-2"
+            >
+              <span class="whitespace-nowrap">Continuer vers la livraison</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Résumé étape 1 (quand validée) -->
+          <div id="step-1-summary" class="hidden text-sm text-stone-600 mt-2 font-medium bg-amber-50/30 p-3.5 rounded-xl border border-amber-500/10">
+            <p>Email : <span id="summary-email" class="text-stone-900 font-semibold"></span></p>
+          </div>
+        </div>
+
+        <!-- ÉTAPE 2 : ADRESSE DE LIVRAISON -->
+        <div class="bg-white border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm transition-all duration-300 opacity-50 pointer-events-none relative overflow-hidden" id="step-2-card">
+          <div class="absolute top-0 right-0 h-2 w-full bg-stone-100" id="step-2-progress-bar"></div>
+          
+          <div class="flex items-start justify-between mb-6">
+            <div class="flex items-center gap-4">
+              <span class="h-8 w-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center font-bold text-sm" id="step-2-num">2</span>
+              <h3 class="font-display text-xl font-bold text-stone-400 transition-colors" id="step-2-title">Adresse de livraison</h3>
+            </div>
+            <button id="edit-step-2-btn" class="hidden text-xs font-semibold text-amber-700 hover:text-amber-900 underline transition-colors">Modifier</button>
+          </div>
+
+          <!-- Formulaire d'adresse -->
+          <div id="step-2-form-container" class="hidden space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="shipping-first-name" class="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2">Prénom</label>
+                <input 
+                  type="text" 
+                  id="shipping-first-name" 
+                  placeholder="Jean" 
+                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                  required
+                />
+              </div>
+              <div>
+                <label for="shipping-last-name" class="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2">Nom de famille</label>
+                <input 
+                  type="text" 
+                  id="shipping-last-name" 
+                  placeholder="Dupont" 
+                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="shipping-address" class="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2">Adresse postale</label>
+              <input 
+                type="text" 
+                id="shipping-address" 
+                placeholder="12 rue de la Paix" 
+                class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                required
+              />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="sm:col-span-1">
+                <label for="shipping-postal-code" class="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2">Code Postal</label>
+                <input 
+                  type="text" 
+                  id="shipping-postal-code" 
+                  placeholder="75002" 
+                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                  required
+                />
+              </div>
+              <div class="sm:col-span-2">
+                <label for="shipping-city" class="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2">Ville</label>
+                <input 
+                  type="text" 
+                  id="shipping-city" 
+                  placeholder="Paris" 
+                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="shipping-phone" class="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2">Téléphone</label>
+                <input 
+                  type="tel" 
+                  id="shipping-phone" 
+                  placeholder="06 12 34 56 78" 
+                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                  required
+                />
+              </div>
+              <div>
+                <label for="shipping-country" class="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2">Pays</label>
+                <input 
+                  type="text" 
+                  id="shipping-country" 
+                  value="France" 
+                  class="w-full px-4 py-3 bg-stone-200 rounded-xl border border-stone-200 text-stone-500 font-semibold text-sm cursor-not-allowed"
+                  disabled
+                />
+              </div>
+            </div>
+
+            <button 
+              id="submit-step-2-btn"
+              class="w-full sm:w-auto px-6 py-2.5 sm:px-8 sm:py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors text-sm shadow-sm flex items-center justify-center gap-2 mt-2"
+            >
+              <span class="whitespace-nowrap">Continuer vers le mode de livraison</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Résumé étape 2 (quand validée) -->
+          <div id="step-2-summary" class="hidden text-sm text-stone-600 mt-2 font-medium bg-amber-50/30 p-3.5 rounded-xl border border-amber-500/10">
+            <p id="summary-address-name" class="text-stone-900 font-semibold"></p>
+            <p id="summary-address-street"></p>
+            <p id="summary-address-city"></p>
+            <p id="summary-address-phone"></p>
+          </div>
+        </div>
+
+        <!-- ÉTAPE 3 : MODE DE LIVRAISON -->
+        <div class="bg-white border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm transition-all duration-300 opacity-50 pointer-events-none relative overflow-hidden" id="step-3-card">
+          <div class="absolute top-0 right-0 h-2 w-full bg-stone-100" id="step-3-progress-bar"></div>
+          
+          <div class="flex items-start justify-between mb-6">
+            <div class="flex items-center gap-4">
+              <span class="h-8 w-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center font-bold text-sm" id="step-3-num">3</span>
+              <h3 class="font-display text-xl font-bold text-stone-400 transition-colors" id="step-3-title">Mode de livraison</h3>
+            </div>
+            <button id="edit-step-3-btn" class="hidden text-xs font-semibold text-amber-700 hover:text-amber-900 underline transition-colors">Modifier</button>
+          </div>
+
+          <!-- Options de livraison dynamiques -->
+          <div id="step-3-form-container" class="hidden space-y-4">
+            
+            <div id="shipping-options-list" class="space-y-3">
+              <!-- Injecté en JS -->
+              <div class="animate-pulse space-y-2">
+                <div class="h-14 bg-stone-100 rounded-xl"></div>
+              </div>
+            </div>
+
+            <button 
+              id="submit-step-3-btn"
+              class="w-full sm:w-auto px-6 py-2.5 sm:px-8 sm:py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors text-sm shadow-sm flex items-center justify-center gap-2 mt-2"
+            >
+              <span class="whitespace-nowrap">Continuer vers le paiement</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Résumé étape 3 (quand validée) -->
+          <div id="step-3-summary" class="hidden text-sm text-stone-600 mt-2 font-medium bg-amber-50/30 p-3.5 rounded-xl border border-amber-500/10">
+            <p>Mode : <span id="summary-shipping-name" class="text-stone-900 font-semibold"></span> (<span id="summary-shipping-price" class="text-amber-700 font-bold"></span>)</p>
+          </div>
+        </div>
+
+        <!-- ÉTAPE 4 : PAIEMENT SÉCURISÉ & VALIDATION -->
+        <div class="bg-white border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm transition-all duration-300 opacity-50 pointer-events-none relative overflow-hidden" id="step-4-card">
+          <div class="absolute top-0 right-0 h-2 w-full bg-stone-100" id="step-4-progress-bar"></div>
+          
+          <div class="flex items-center gap-4 mb-6">
+            <span class="h-8 w-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center font-bold text-sm" id="step-4-num">4</span>
+            <h3 class="font-display text-xl font-bold text-stone-400 transition-colors" id="step-4-title">Méthode de paiement</h3>
+          </div>
+
+          <!-- Paiement simulation -->
+          <div id="step-4-form-container" class="hidden space-y-6">
+            
+            <div class="bg-stone-50 border border-stone-200 rounded-2xl p-5 space-y-4">
+              <div class="flex items-start gap-3">
+                <div class="h-5 w-5 rounded-full border-4 border-amber-600 bg-amber-600 flex items-center justify-center mt-0.5">
+                  <div class="h-1.5 w-1.5 rounded-full bg-white"></div>
+                </div>
+                <div class="flex-grow">
+                  <div class="flex items-center justify-between">
+                    <h4 class="text-sm font-bold text-amber-950">Méthode Simulée de Validation</h4>
+                    <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-md">Démo & Test</span>
+                  </div>
+                  <p class="text-xs text-stone-500 mt-1 leading-relaxed">
+                    Pour cette boutique de miels artisanaux, la commande sera validée en mode **Paiement à la livraison / Virement**. Aucune transaction bancaire réelle ne sera effectuée.
+                  </p>
+                </div>
+              </div>
+
+              <div class="border-t border-stone-200 pt-4 flex items-center justify-between text-xs text-stone-400">
+                <div class="flex items-center gap-1.5">
+                  <span>🔒</span>
+                  <span>Sécurisé par MedusaJS</span>
+                </div>
+                <div class="flex gap-2">
+                  <span class="text-base grayscale opacity-60">💳</span>
+                  <span class="text-base grayscale opacity-60">🤝</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Conditions d'utilisation -->
+            <p class="text-xs text-stone-500 leading-relaxed">
+              En cliquant sur le bouton ci-dessous, vous acceptez que votre panier soit complété et que votre commande soit préparée par notre miellerie. Un email de confirmation récapitulatif vous sera immédiatement envoyé.
+            </p>
+
+            <!-- Bouton de paiement final -->
+            <button 
+              id="checkout-submit-final-btn"
+              class="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-stone-900 rounded-full font-bold text-center transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-3 text-base"
+            >
+              <span class="whitespace-nowrap">Valider et Confirmer ma commande</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="h-5 w-5 flex-shrink-0 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Colonne de droite : Résumé de commande -->
+      <div class="lg:col-span-5 lg:sticky lg:top-28">
+        <div class="bg-amber-50/20 border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+          <h3 class="font-display text-xl font-bold text-amber-950 flex items-center gap-2">
+            <span>📦</span>
+            <span>Votre commande</span>
+          </h3>
+
+          <!-- Liste des articles -->
+          <div id="checkout-summary-items" class="space-y-4 max-h-[350px] overflow-y-auto pr-1">
+            <!-- Injecté dynamiquement en JS -->
+          </div>
+
+          <div class="border-t border-amber-900/10 pt-6 space-y-3 text-sm font-medium text-stone-600">
+            <div class="flex justify-between">
+              <span>Sous-total</span>
+              <span id="summary-subtotal" class="text-stone-900">0,00 €</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span>Frais de livraison</span>
+              <span id="summary-shipping" class="text-amber-700 font-semibold">Calculé à l'étape 3</span>
+            </div>
+            
+            <div class="border-t border-amber-900/10 pt-4 flex justify-between items-baseline font-display font-bold text-xl text-amber-950">
+              <span>Total Général</span>
+              <span id="summary-total" class="text-2xl text-amber-900">0,00 €</span>
+            </div>
+          </div>
+
+          <!-- Garantie de confiance -->
+          <div class="bg-white border border-amber-900/5 rounded-2xl p-4 flex gap-3 text-xs text-stone-500">
+            <span class="text-lg">🌱</span>
+            <div>
+              <h5 class="font-bold text-amber-950 mb-0.5">La Miellerie Royale</h5>
+              <p>Miels artisanaux 100% bio et récoltés de manière écoresponsable en France.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ÉCRAN DE SUCCÈS - CONFIRMATION DE COMMANDE DÉTAILLÉE -->
+    <div id="checkout-success-container" class="hidden max-w-2xl mx-auto bg-white border border-amber-900/5 rounded-3xl shadow-xl overflow-hidden p-8 md:p-12 text-center space-y-8 animate-fade-in relative">
+      
+      <!-- Décoration supérieure -->
+      <div class="absolute top-0 inset-x-0 h-3 bg-gradient-to-r from-amber-400 via-amber-600 to-amber-400"></div>
+
+      <!-- Icone de succès animée -->
+      <div class="mx-auto h-20 w-20 bg-green-50 rounded-full flex items-center justify-center text-4xl border border-green-100 shadow-sm animate-bounce">
+        ✨
+      </div>
+
+      <div class="space-y-3">
+        <h2 class="font-display text-3xl font-extrabold text-amber-950 md:text-4xl">Merci pour votre commande !</h2>
+        <p class="text-stone-500 text-sm md:text-base">Votre commande a été enregistrée avec succès par nos apiculteurs apaisés.</p>
+      </div>
+
+      <!-- Fiche Récapitulatif -->
+      <div class="bg-stone-50 rounded-2xl p-6 text-left border border-stone-200/60 space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-3 border-b border-stone-200">
+          <div>
+            <p class="text-xs text-stone-400 uppercase font-bold tracking-wider">Référence de commande</p>
+            <p class="font-mono text-sm font-bold text-stone-900 mt-0.5" id="success-order-id">ORD-XXXXXXXX</p>
+          </div>
+          <div class="mt-2 sm:mt-0">
+            <p class="text-xs text-stone-400 uppercase font-bold tracking-wider">Montant total réglé</p>
+            <p class="text-lg font-bold text-amber-900 mt-0.5" id="success-order-total">0,00 €</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
+          <div>
+            <h4 class="font-bold text-amber-950 mb-1.5 flex items-center gap-1.5">
+              <span>📍</span> Adresse de livraison
+            </h4>
+            <p id="success-shipping-name" class="font-semibold text-stone-850"></p>
+            <p id="success-shipping-street" class="text-stone-600 mt-0.5"></p>
+            <p id="success-shipping-city" class="text-stone-600"></p>
+          </div>
+          <div>
+            <h4 class="font-bold text-amber-950 mb-1.5 flex items-center gap-1.5">
+              <span>📧</span> Contact de suivi
+            </h4>
+            <p id="success-shipping-email" class="font-semibold text-stone-850"></p>
+            <p id="success-shipping-phone" class="text-stone-600 mt-0.5"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Information de livraison -->
+      <div class="bg-amber-50/40 border border-amber-900/5 rounded-2xl p-5 text-left text-sm flex gap-4">
+        <span class="text-2xl mt-0.5">🚚</span>
+        <div>
+          <h4 class="font-bold text-amber-950 mb-0.5">Suivi de votre colis</h4>
+          <p class="text-stone-650 leading-relaxed text-xs">
+            Nos apiculteurs préparent votre colis avec soin. Il sera expédié dans les 24 à 48 heures. Un email contenant vos informations de suivi postal vous sera envoyé à l'adresse fournie dès la remise du colis au transporteur.
+          </p>
+        </div>
+      </div>
+
+      <div class="pt-4 flex flex-col sm:flex-row justify-center gap-4">
+        <a 
+          href="/boutique" 
+          class="px-8 py-3.5 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors text-sm shadow-md flex items-center justify-center gap-2"
+        >
+          <span>Continuer mes achats</span>
+          <span>🍯</span>
+        </a>
+        <a 
+          href="/" 
+          class="px-8 py-3.5 bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 font-bold rounded-full transition-colors text-sm shadow-sm"
+        >
+          Retourner à l'accueil
+        </a>
+      </div>
+
+    </div>
+
+  </div>
+</Layout>
+
+<script>
+  // Configuration d'intégration Medusa
+  const container = document.getElementById('checkout-main-container');
+  const MEDUSA_URL = 'http://localhost:9000';
+  const PUBLISHABLE_KEY = 'pk_0f9d9259c9d5bcca12a1fbdfea9a766503cc51ef62b51db08c52833dc07bb220';
+
+  // État local de la page
+  let cartId = localStorage.getItem('medusa_cart_id');
+  let currentCart: any = null;
+  let activeStep = 1;
+
+  // DOM Elements - Général
+  const loader = document.getElementById('checkout-initial-loader');
+  const emptyState = document.getElementById('checkout-empty-state');
+  const mainContainer = document.getElementById('checkout-main-container');
+  const successContainer = document.getElementById('checkout-success-container');
+
+  // DOM Elements - Étape 1
+  const step1Card = document.getElementById('step-1-card');
+  const step1FormContainer = document.getElementById('step-1-form-container');
+  const step1Summary = document.getElementById('step-1-summary');
+  const emailInput = document.getElementById('contact-email') as HTMLInputElement;
+  const submitStep1Btn = document.getElementById('submit-step-1-btn');
+  const editStep1Btn = document.getElementById('edit-step-1-btn');
+  const summaryEmail = document.getElementById('summary-email');
+
+  // DOM Elements - Étape 2
+  const step2Card = document.getElementById('step-2-card');
+  const step2FormContainer = document.getElementById('step-2-form-container');
+  const step2Summary = document.getElementById('step-2-summary');
+  const firstNameInput = document.getElementById('shipping-first-name') as HTMLInputElement;
+  const lastNameInput = document.getElementById('shipping-last-name') as HTMLInputElement;
+  const addressInput = document.getElementById('shipping-address') as HTMLInputElement;
+  const postalCodeInput = document.getElementById('shipping-postal-code') as HTMLInputElement;
+  const cityInput = document.getElementById('shipping-city') as HTMLInputElement;
+  const phoneInput = document.getElementById('shipping-phone') as HTMLInputElement;
+  const submitStep2Btn = document.getElementById('submit-step-2-btn');
+  const editStep2Btn = document.getElementById('edit-step-2-btn');
+  const step2Num = document.getElementById('step-2-num');
+  const step2Title = document.getElementById('step-2-title');
+  const summaryAddressName = document.getElementById('summary-address-name');
+  const summaryAddressStreet = document.getElementById('summary-address-street');
+  const summaryAddressCity = document.getElementById('summary-address-city');
+  const summaryAddressPhone = document.getElementById('summary-address-phone');
+
+  // DOM Elements - Étape 3
+  const step3Card = document.getElementById('step-3-card');
+  const step3FormContainer = document.getElementById('step-3-form-container');
+  const step3Summary = document.getElementById('step-3-summary');
+  const shippingOptionsList = document.getElementById('shipping-options-list');
+  const submitStep3Btn = document.getElementById('submit-step-3-btn');
+  const editStep3Btn = document.getElementById('edit-step-3-btn');
+  const step3Num = document.getElementById('step-3-num');
+  const step3Title = document.getElementById('step-3-title');
+  const summaryShippingName = document.getElementById('summary-shipping-name');
+  const summaryShippingPrice = document.getElementById('summary-shipping-price');
+
+  // DOM Elements - Étape 4
+  const step4Card = document.getElementById('step-4-card');
+  const step4FormContainer = document.getElementById('step-4-form-container');
+  const step4Num = document.getElementById('step-4-num');
+  const step4Title = document.getElementById('step-4-title');
+  const submitFinalBtn = document.getElementById('checkout-submit-final-btn');
+
+  // DOM Elements - Summary
+  const summaryItems = document.getElementById('checkout-summary-items');
+  const summarySubtotal = document.getElementById('summary-subtotal');
+  const summaryShipping = document.getElementById('summary-shipping');
+  const summaryTotal = document.getElementById('summary-total');
+
+  // DOM Elements - Succès
+  const successOrderId = document.getElementById('success-order-id');
+  const successOrderTotal = document.getElementById('success-order-total');
+  const successShippingName = document.getElementById('success-shipping-name');
+  const successShippingStreet = document.getElementById('success-shipping-street');
+  const successShippingCity = document.getElementById('success-shipping-city');
+  const successShippingEmail = document.getElementById('success-shipping-email');
+  const successShippingPhone = document.getElementById('success-shipping-phone');
+
+  // Formatage de prix (Medusa v2 utilise directement l'unité principale)
+  function formatPrice(amount: number) {
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+  }
+
+  // Appels API Medusa Store
+  async function storeFetch(path: string, options: RequestInit = {}) {
+    const url = `${MEDUSA_URL}/store${path}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-publishable-api-key': PUBLISHABLE_KEY,
+      ...(options.headers || {}),
+    };
+    const res = await fetch(url, { ...options, headers });
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`Medusa API error at ${path}:`, res.status, errorText);
+      throw new Error(`API Error: ${res.status}`);
+    }
+    return res.json();
+  }
+
+  // Initialisation de la page
+  async function init() {
+    if (!cartId) {
+      showEmptyState();
+      return;
+    }
+
+    try {
+      const data = await storeFetch(`/carts/${cartId}`);
+      currentCart = data.cart;
+
+      if (!currentCart.items || currentCart.items.length === 0) {
+        showEmptyState();
+        return;
+      }
+
+      // Remplir le formulaire avec les valeurs existantes si possibles
+      if (currentCart.email) {
+        emailInput.value = currentCart.email;
+      }
+      if (currentCart.shipping_address) {
+        const addr = currentCart.shipping_address;
+        firstNameInput.value = addr.first_name || '';
+        lastNameInput.value = addr.last_name || '';
+        addressInput.value = addr.address_1 || '';
+        postalCodeInput.value = addr.postal_code || '';
+        cityInput.value = addr.city || '';
+        phoneInput.value = addr.phone || '';
+      }
+
+      updateSummaryUI();
+      hideInitialLoader();
+      
+      // Activer l'étape 1
+      goToStep(1);
+
+    } catch (e) {
+      console.error('Erreur initialisation checkout', e);
+      showEmptyState();
+    }
+  }
+
+  function hideInitialLoader() {
+    loader?.classList.add('hidden');
+    mainContainer?.classList.remove('hidden');
+  }
+
+  function showEmptyState() {
+    loader?.classList.add('hidden');
+    emptyState?.classList.remove('hidden');
+    mainContainer?.classList.add('hidden');
+  }
+
+  // Navigation entre les étapes
+  function goToStep(stepNum: number) {
+    activeStep = stepNum;
+
+    // Reset des opacités et pointer events
+    const steps = [
+      { num: 1, card: step1Card, form: step1FormContainer, summary: step1Summary, editBtn: editStep1Btn, circle: null, title: null },
+      { num: 2, card: step2Card, form: step2FormContainer, summary: step2Summary, editBtn: editStep2Btn, circle: step2Num, title: step2Title },
+      { num: 3, card: step3Card, form: step3FormContainer, summary: step3Summary, editBtn: editStep3Btn, circle: step3Num, title: step3Title },
+      { num: 4, card: step4Card, form: step4FormContainer, summary: null, editBtn: null, circle: step4Num, title: step4Title }
+    ];
+
+    steps.forEach((s) => {
+      if (s.num < stepNum) {
+        // Étapes passées (validées)
+        s.card?.classList.remove('opacity-50', 'pointer-events-none');
+        s.form?.classList.add('hidden');
+        s.summary?.classList.remove('hidden');
+        s.editBtn?.classList.remove('hidden');
+        if (s.circle) {
+          s.circle.classList.remove('bg-stone-100', 'text-stone-500');
+          s.circle.classList.add('bg-green-100', 'text-green-800');
+          s.circle.innerText = '✓';
+        }
+        if (s.title) {
+          s.title.classList.remove('text-stone-400');
+          s.title.classList.add('text-amber-950');
+        }
+      } else if (s.num === stepNum) {
+        // Étape active
+        s.card?.classList.remove('opacity-50', 'pointer-events-none');
+        s.form?.classList.remove('hidden');
+        if (s.summary) s.summary.classList.add('hidden');
+        s.editBtn?.classList.add('hidden');
+        if (s.circle) {
+          s.circle.classList.remove('bg-green-100', 'text-green-800', 'bg-stone-100', 'text-stone-500');
+          s.circle.classList.add('bg-amber-100', 'text-amber-900');
+          s.circle.innerText = s.num.toString();
+        }
+        if (s.title) {
+          s.title.classList.remove('text-stone-400');
+          s.title.classList.add('text-amber-950');
+        }
+      } else {
+        // Étapes futures
+        s.card?.classList.add('opacity-50', 'pointer-events-none');
+        s.form?.classList.add('hidden');
+        if (s.summary) s.summary.classList.add('hidden');
+        s.editBtn?.classList.add('hidden');
+        if (s.circle) {
+          s.circle.classList.remove('bg-green-100', 'text-green-800', 'bg-amber-100', 'text-amber-900');
+          s.circle.classList.add('bg-stone-100', 'text-stone-500');
+          s.circle.innerText = s.num.toString();
+        }
+        if (s.title) {
+          s.title.classList.remove('text-amber-950');
+          s.title.classList.add('text-stone-400');
+        }
+      }
+    });
+
+    // Ajustement visuel smooth
+    const targetCard = [step1Card, step2Card, step3Card, step4Card][stepNum - 1];
+    targetCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // Événements d'édition manuelle des étapes validées
+  editStep1Btn?.addEventListener('click', () => goToStep(1));
+  editStep2Btn?.addEventListener('click', () => goToStep(2));
+  editStep3Btn?.addEventListener('click', () => goToStep(3));
+
+  // ÉTAPE 1 : Validation des coordonnées
+  submitStep1Btn?.addEventListener('click', () => {
+    const email = emailInput.value.trim();
+    if (!email || !emailInput.checkValidity()) {
+      alert('Veuillez entrer une adresse email valide.');
+      return;
+    }
+    
+    // Mettre à jour l'affichage
+    if (summaryEmail) summaryEmail.innerText = email;
+    goToStep(2);
+  });
+
+  // ÉTAPE 2 : Validation de l'adresse de livraison et envoi à Medusa
+  submitStep2Btn?.addEventListener('click', async () => {
+    const firstName = firstNameInput.value.trim();
+    const lastName = lastNameInput.value.trim();
+    const address = addressInput.value.trim();
+    const postalCode = postalCodeInput.value.trim();
+    const city = cityInput.value.trim();
+    const phone = phoneInput.value.trim();
+
+    if (!firstName || !lastName || !address || !postalCode || !city || !phone) {
+      alert('Veuillez remplir tous les champs de l\'adresse de livraison.');
+      return;
+    }
+
+    // Afficher un loader temporaire sur le bouton
+    const origBtnText = submitStep2Btn.innerHTML;
+    submitStep2Btn.innerHTML = `<span>Mise à jour en cours...</span><div class="h-4 w-4 border-2 border-stone-900 border-t-transparent animate-spin rounded-full"></div>`;
+    submitStep2Btn.setAttribute('disabled', 'true');
+
+    try {
+      // 1. Envoyer l'adresse et l'email au panier Medusa
+      const body = {
+        email: emailInput.value.trim(),
+        shipping_address: {
+          first_name: firstName,
+          last_name: lastName,
+          address_1: address,
+          postal_code: postalCode,
+          city: city,
+          country_code: 'fr',
+          phone: phone
+        }
+      };
+
+      const data = await storeFetch(`/carts/${cartId}`, {
+        method: 'POST',
+        body: JSON.stringify(body)
+      });
+      currentCart = data.cart;
+
+      // 2. Mettre à jour l'affichage de résumé de livraison
+      if (summaryAddressName) summaryAddressName.innerText = `${firstName} ${lastName}`;
+      if (summaryAddressStreet) summaryAddressStreet.innerText = address;
+      if (summaryAddressCity) summaryAddressCity.innerText = `${postalCode} ${city}`;
+      if (summaryAddressPhone) summaryAddressPhone.innerText = `Téléphone : ${phone}`;
+
+      // 3. Charger les options de livraison pour l'étape 3
+      await fetchShippingOptions();
+
+      // Mettre à jour les totaux du résumé
+      updateSummaryUI();
+
+      // Passer à l'étape 3
+      goToStep(3);
+
+    } catch (err) {
+      console.error(err);
+      alert('Erreur lors de la mise à jour de l\'adresse. Veuillez réessayer.');
+    } finally {
+      submitStep2Btn.innerHTML = origBtnText;
+      submitStep2Btn.removeAttribute('disabled');
+    }
+  });
+
+  // Charger les options de livraison depuis Medusa
+  async function fetchShippingOptions() {
+    if (!shippingOptionsList) return;
+    
+    // Spinner
+    shippingOptionsList.innerHTML = `
+      <div class="flex items-center gap-3 p-4 bg-stone-50 border border-stone-200 rounded-2xl">
+        <div class="h-5 w-5 border-2 border-amber-600 border-t-transparent animate-spin rounded-full"></div>
+        <p class="text-xs text-stone-500 font-medium">Recherche des meilleurs tarifs postaux...</p>
+      </div>
+    `;
+
+    try {
+      const data = await storeFetch(`/shipping-options?cart_id=${cartId}`);
+      const options = data.shipping_options;
+
+      if (!options || options.length === 0) {
+        shippingOptionsList.innerHTML = `
+          <div class="p-4 bg-red-50 border border-red-100 rounded-2xl text-xs text-red-700">
+            Aucun mode de livraison n'est configuré pour cette adresse. Veuillez modifier vos coordonnées.
+          </div>
+        `;
+        submitStep3Btn?.setAttribute('disabled', 'true');
+        return;
+      }
+
+      // Dessiner les boutons radios des options
+      shippingOptionsList.innerHTML = options.map((opt: any, index: number) => `
+        <label class="flex items-start gap-4 bg-white hover:bg-amber-50/10 p-5 rounded-2xl border ${index === 0 ? 'border-amber-500 bg-amber-50/20' : 'border-stone-200'} hover:border-amber-500/50 transition-all duration-300 cursor-pointer shadow-sm relative shipping-option-label" data-id="${opt.id}">
+          <input 
+            type="radio" 
+            name="shipping_option" 
+            value="${opt.id}" 
+            class="mt-1 accent-amber-600 shipping-option-radio"
+            ${index === 0 ? 'checked' : ''}
+            data-name="${opt.name}"
+            data-amount="${opt.calculated_price?.calculated_amount ?? 0}"
+          />
+          <div class="flex-grow min-w-0 -mt-0.5">
+            <div class="flex items-center justify-between gap-2">
+              <h4 class="text-sm font-bold text-amber-950">${opt.name}</h4>
+              <span class="text-sm font-extrabold text-amber-900">${opt.calculated_price?.calculated_amount === 0 ? 'Offert' : formatPrice(opt.calculated_price?.calculated_amount ?? 0)}</span>
+            </div>
+            <p class="text-xs text-stone-400 mt-1">${opt.type?.description || 'Livraison standard à domicile'}</p>
+          </div>
+        </label>
+      `).join('');
+
+      // Câbler le changement de sélection pour effet visuel de bordure
+      const radios = document.querySelectorAll('.shipping-option-radio');
+      radios.forEach((r: any) => {
+        r.addEventListener('change', () => {
+          document.querySelectorAll('.shipping-option-label').forEach((lbl: any) => {
+            lbl.classList.remove('border-amber-500', 'bg-amber-50/20');
+            lbl.classList.add('border-stone-200');
+          });
+          const label = r.closest('.shipping-option-label');
+          label?.classList.remove('border-stone-200');
+          label?.classList.add('border-amber-500', 'bg-amber-50/20');
+        });
+      });
+
+      submitStep3Btn?.removeAttribute('disabled');
+
+    } catch (e) {
+      console.error(e);
+      shippingOptionsList.innerHTML = `
+        <div class="p-4 bg-red-50 border border-red-100 rounded-2xl text-xs text-red-750">
+          Une erreur est survenue lors de la récupération des options de livraison.
+        </div>
+      `;
+      submitStep3Btn?.setAttribute('disabled', 'true');
+    }
+  }
+
+  // ÉTAPE 3 : Validation de la livraison
+  submitStep3Btn?.addEventListener('click', async () => {
+    const selectedRadio = document.querySelector('input[name="shipping_option"]:checked') as HTMLInputElement;
+    if (!selectedRadio) {
+      alert('Veuillez sélectionner un mode de livraison.');
+      return;
+    }
+
+    const optionId = selectedRadio.value;
+    const name = selectedRadio.dataset.name || 'Livraison';
+    const amount = parseInt(selectedRadio.dataset.amount || '0');
+
+    // Loader
+    const origBtnText = submitStep3Btn.innerHTML;
+    submitStep3Btn.innerHTML = `<span>Application du mode...</span><div class="h-4 w-4 border-2 border-stone-900 border-t-transparent animate-spin rounded-full"></div>`;
+    submitStep3Btn.setAttribute('disabled', 'true');
+
+    try {
+      // Assigner la livraison sur Medusa
+      const data = await storeFetch(`/carts/${cartId}/shipping-methods`, {
+        method: 'POST',
+        body: JSON.stringify({ option_id: optionId })
+      });
+      currentCart = data.cart;
+
+      // Résumé de la livraison
+      if (summaryShippingName) summaryShippingName.innerText = name;
+      if (summaryShippingPrice) summaryShippingPrice.innerText = amount === 0 ? 'Offert' : formatPrice(amount);
+
+      // Mettre à jour l'affichage des totaux
+      updateSummaryUI();
+
+      // Aller à l'étape 4
+      goToStep(4);
+
+    } catch (e) {
+      console.error(e);
+      alert('Erreur lors de la configuration de l\'expédition. Veuillez réessayer.');
+    } finally {
+      submitStep3Btn.innerHTML = origBtnText;
+      submitStep3Btn.removeAttribute('disabled');
+    }
+  });
+
+  // ÉTAPE 4 : Validation finale du paiement (COMPLETE DU CHECKOUT)
+  submitFinalBtn?.addEventListener('click', async () => {
+    // Loader sur le bouton final
+    submitFinalBtn.setAttribute('disabled', 'true');
+    submitFinalBtn.innerHTML = `
+      <span>Validation de votre commande...</span>
+      <div class="h-5 w-5 border-2 border-stone-900 border-t-transparent animate-spin rounded-full"></div>
+    `;
+
+    try {
+      // 1. Créer la Collection de Paiement
+      const collectionRes = await storeFetch('/payment-collections', {
+        method: 'POST',
+        body: JSON.stringify({ cart_id: cartId })
+      });
+      const paymentCollectionId = collectionRes.payment_collection.id;
+
+      // 2. Initialiser la session de paiement avec le provider pp_system_default (le provider système par défaut de MedusaJS v2)
+      await storeFetch(`/payment-collections/${paymentCollectionId}/payment-sessions`, {
+        method: 'POST',
+        body: JSON.stringify({ provider_id: 'pp_system_default' })
+      });
+
+      // 3. Compléter la commande
+      const completeRes = await storeFetch(`/carts/${cartId}/complete`, {
+        method: 'POST'
+      });
+
+      if (completeRes.type === 'order' && completeRes.order) {
+        const order = completeRes.order;
+        
+        // Nettoyer localement
+        localStorage.removeItem('medusa_cart_id');
+        cartId = null;
+
+        // Déclencher un événement global pour que la barre de navigation se mette à jour
+        window.dispatchEvent(new Event('cart-updated'));
+
+        // Afficher l'écran de succès
+        showSuccessState(order);
+
+      } else {
+        throw new Error('La finalisation du panier n\'a pas retourné de commande.');
+      }
+
+    } catch (err) {
+      console.error('Finalisation de checkout échouée', err);
+      alert('Une erreur inattendue est survenue lors de la finalisation de votre paiement. Veuillez contacter notre service client.');
+      submitFinalBtn.removeAttribute('disabled');
+      submitFinalBtn.innerHTML = `
+        <span>Valider et Confirmer ma commande</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      `;
+    }
+  });
+
+  // Affichage du panneau de succès
+  function showSuccessState(order: any) {
+    mainContainer?.classList.add('hidden');
+    successContainer?.classList.remove('hidden');
+
+    if (successOrderId) successOrderId.innerText = order.id;
+    if (successOrderTotal) successOrderTotal.innerText = formatPrice(order.total);
+
+    const addr = order.shipping_address;
+    if (successShippingName) successShippingName.innerText = `${addr.first_name} ${addr.last_name}`;
+    if (successShippingStreet) successShippingStreet.innerText = addr.address_1;
+    if (successShippingCity) successShippingCity.innerText = `${addr.postal_code} ${addr.city}`;
+    
+    if (successShippingEmail) successShippingEmail.innerText = order.email;
+    if (successShippingPhone) successShippingPhone.innerText = addr.phone || '';
+
+    // Scroll au sommet
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Mettre à jour l'UI du résumé de commande de droite
+  function updateSummaryUI() {
+    if (!currentCart || !summaryItems) return;
+
+    // Rendu des articles
+    summaryItems.innerHTML = currentCart.items.map((item: any) => `
+      <div class="flex items-center gap-3 bg-white p-3.5 rounded-2xl border border-amber-900/5 hover:border-amber-500/10 transition-all duration-300 shadow-sm">
+        <div class="h-12 w-12 bg-amber-50/50 rounded-lg flex items-center justify-center font-display text-lg border border-amber-100">
+          🍯
+        </div>
+        <div class="flex-grow min-w-0 text-xs">
+          <h4 class="font-display font-semibold text-stone-900 truncate">${item.title}</h4>
+          <p class="text-stone-400 mt-0.5">Format: ${item.variant_title || (item.variant ? item.variant.title : '')}</p>
+          <div class="flex items-center justify-between mt-1">
+            <span class="text-stone-500 font-medium">${item.quantity} x ${formatPrice(item.unit_price)}</span>
+            <span class="font-bold text-amber-950 text-sm">${formatPrice(item.unit_price * item.quantity)}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // Rendu des totaux
+    if (summarySubtotal) summarySubtotal.innerText = formatPrice(currentCart.subtotal);
+    
+    if (summaryShipping) {
+      if (currentCart.shipping_methods && currentCart.shipping_methods.length > 0) {
+        const cost = currentCart.shipping_methods[0].amount;
+        summaryShipping.innerText = cost === 0 ? 'Offert' : formatPrice(cost);
+        summaryShipping.className = "text-amber-700 font-semibold";
+      } else {
+        summaryShipping.innerText = "Calculé à l'étape 3";
+        summaryShipping.className = "text-stone-400 italic font-normal";
+      }
+    }
+
+    if (summaryTotal) summaryTotal.innerText = formatPrice(currentCart.total);
+  }
+
+  // Lancement
+  init();
+</script>
+
+<style>
+  /* Animations fines pour le checkout */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+</style>

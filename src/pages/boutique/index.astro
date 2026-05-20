@@ -1,12 +1,24 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { medusa } from '../../lib/medusa';
+import { payload } from '../../lib/payload';
 
 // 1. Récupération des produits Medusa
 const { products } = await medusa.products().catch((err) => {
   console.warn('[Astro Boutique] Erreur fetch Medusa, utilisation du fallback.', err.message);
   return { products: [] };
 });
+
+// 2. Récupération de la page boutique depuis Payload CMS (pour l'en-tête dynamique et le SEO)
+const boutiquePageRes = await payload.page('boutique').catch((err) => {
+  console.warn('[Astro Boutique] Erreur fetch Payload page boutique, utilisation du fallback statique.', err.message);
+  return null;
+});
+
+const boutiquePage = boutiquePageRes?.docs?.[0] ?? null;
+const pageHeaderBlock = boutiquePage?.layout?.find(block => block.blockType === 'pageHeader');
+const pageTitle = boutiquePage?.seo?.title ?? "Boutique de Miels d'Exception — Miellerie Royale";
+const pageDescription = boutiquePage?.seo?.description ?? "Sélection de crus récoltés by nos apiculteurs partenaires et issus des plus riches terroirs de France.";
 
 const fallbackProducts = [
   {
@@ -16,7 +28,7 @@ const fallbackProducts = [
     subtitle: "Doux, fleuri, notes de vanille",
     description: "Un miel crémeux d'une grande finesse, très aromatique et légèrement fruité. Récolté au cœur des plateaux de lavande.",
     variants: [
-      { id: "var_lav_250", title: "Pot de 250g", calculated_price: { calculated_amount: 790, currency_code: "eur" } }
+      { id: "var_lav_250", title: "Pot de 250g", calculated_price: { calculated_amount: 7.90, currency_code: "eur" } }
     ]
   },
   {
@@ -26,7 +38,7 @@ const fallbackProducts = [
     subtitle: "Robuste, boisé, amertume subtile",
     description: "Miel corsé et boisé, avec une amertume caractéristique et une belle robe ambrée foncée.",
     variants: [
-      { id: "var_cha_250", title: "Pot de 250g", calculated_price: { calculated_amount: 820, currency_code: "eur" } }
+      { id: "var_cha_250", title: "Pot de 250g", calculated_price: { calculated_amount: 8.20, currency_code: "eur" } }
     ]
   },
   {
@@ -36,7 +48,7 @@ const fallbackProducts = [
     subtitle: "Liquide, très doux, délicat",
     description: "Un miel très clair, liquide et particulièrement doux en bouche. Sa douceur convient à toute la famille.",
     variants: [
-      { id: "var_aca_250", title: "Pot de 250g", calculated_price: { calculated_amount: 690, currency_code: "eur" } }
+      { id: "var_aca_250", title: "Pot de 250g", calculated_price: { calculated_amount: 6.90, currency_code: "eur" } }
     ]
   },
   {
@@ -46,7 +58,7 @@ const fallbackProducts = [
     subtitle: "Malté, résineux, arômes des bois",
     description: "Miel de miellat rare et prestigieux. Sa robe est très sombre, et ses arômes résineux et maltés sont uniques.",
     variants: [
-      { id: "var_sap_250", title: "Pot de 250g", calculated_price: { calculated_amount: 980, currency_code: "eur" } }
+      { id: "var_sap_250", title: "Pot de 250g", calculated_price: { calculated_amount: 9.80, currency_code: "eur" } }
     ]
   }
 ];
@@ -54,20 +66,40 @@ const fallbackProducts = [
 const displayProducts = products.length > 0 ? products : fallbackProducts;
 ---
 
-<Layout title="Boutique de Miels d'Exception — Miellerie Royale">
+<Layout title={pageTitle} description={pageDescription}>
   
   <section class="relative py-16 px-4 bg-amber-50/20 border-b border-amber-900/5 overflow-hidden">
     <div class="absolute top-0 right-0 w-80 h-80 bg-orange-100/40 rounded-full blur-3xl"></div>
     <div class="max-w-7xl mx-auto text-center relative z-10 space-y-4">
-      <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100/60 rounded-full text-xs font-semibold text-amber-900 border border-amber-200/50">
-        🍯 Miels 100% Purs, Naturels & Français
-      </div>
-      <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 leading-tight">
-        Notre Cave à Miels
-      </h1>
-      <p class="text-stone-500 max-w-xl mx-auto font-light leading-relaxed">
-        Sélection de crus récoltés par nos apiculteurs partenaires et issus des plus riches terroirs de France.
-      </p>
+      {pageHeaderBlock ? (
+        <>
+          {pageHeaderBlock.badge && (
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100/60 rounded-full text-xs font-semibold text-amber-900 border border-amber-200/50">
+              {pageHeaderBlock.badge}
+            </div>
+          )}
+          <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 leading-tight">
+            {pageHeaderBlock.title}
+          </h1>
+          {pageHeaderBlock.description && (
+            <p class="text-stone-500 max-w-xl mx-auto font-light leading-relaxed">
+              {pageHeaderBlock.description}
+            </p>
+          )}
+        </>
+      ) : (
+        <>
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100/60 rounded-full text-xs font-semibold text-amber-900 border border-amber-200/50">
+            🍯 Miels 100% Purs, Naturels & Français
+          </div>
+          <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 leading-tight">
+            Notre Cave à Miels
+          </h1>
+          <p class="text-stone-500 max-w-xl mx-auto font-light leading-relaxed">
+            Sélection de crus récoltés by nos apiculteurs partenaires et issus des plus riches terroirs de France.
+          </p>
+        </>
+      )}
     </div>
   </section>
 
@@ -117,7 +149,7 @@ const displayProducts = products.length > 0 ? products : fallbackProducts;
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="boutique-products-grid">
           {displayProducts.map((p) => {
             const firstVariant = p.variants?.[0];
-            const price = (firstVariant?.calculated_price?.calculated_amount ?? 750) / 100;
+            const price = firstVariant?.calculated_price?.calculated_amount ?? 7.50;
             const currency = firstVariant?.calculated_price?.currency_code?.toUpperCase() ?? 'EUR';
             const formattedPrice = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency }).format(price);
 
