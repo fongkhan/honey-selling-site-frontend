@@ -1,62 +1,655 @@
 ---
-import { medusa } from '~/lib/medusa';
-import { payload } from '~/lib/payload';
-import '../styles/global.css';
+import Layout from '../layouts/Layout.astro';
+import { medusa } from '../lib/medusa';
+import { payload } from '../lib/payload';
 
-const [{ products }, { docs: pages }] = await Promise.all([
-  medusa.products().catch(() => ({ products: [] as Awaited<ReturnType<typeof medusa.products>>['products'] })),
-  payload.page('home').catch(() => ({ docs: [] })),
+// 1. Récupération des données dynamiques avec fallbacks robustes
+const [{ products }, { docs: blogPosts }, homePageRes] = await Promise.all([
+  medusa.products().catch((err) => {
+    console.warn('[Astro Home] Erreur fetch Medusa, utilisation du fallback statique.', err.message);
+    return { products: [] };
+  }),
+  payload.posts().catch((err) => {
+    console.warn('[Astro Home] Erreur fetch Payload CMS posts, utilisation du fallback statique.', err.message);
+    return { docs: [] };
+  }),
+  payload.page('home').catch((err) => {
+    console.warn('[Astro Home] Erreur fetch Payload page home, utilisation du fallback statique.', err.message);
+    return null;
+  }),
 ]);
 
-const home = pages[0];
+const homePage = homePageRes?.docs?.[0] ?? null;
+
+// 2. Miels de secours en cas d'absence de la base Medusa en local
+const fallbackProducts = [
+  {
+    id: "prod_lav",
+    handle: "miel-de-lavande",
+    title: "Miel de Lavande de Provence",
+    subtitle: "Doux, fleuri, notes de vanille",
+    description: "Un miel crémeux d'une grande finesse, très aromatique et légèrement fruité. Récolté au cœur des plateaux de lavande.",
+    variants: [
+      { id: "var_lav_250", title: "Pot de 250g", calculated_price: { calculated_amount: 790, currency_code: "eur" } }
+    ]
+  },
+  {
+    id: "prod_cha",
+    handle: "miel-de-chataignier",
+    title: "Miel de Châtaignier d'Ardèche",
+    subtitle: "Robuste, boisé, amertume subtile",
+    description: "Miel corsé et boisé, avec une amertume caractéristique et une belle robe ambrée foncée.",
+    variants: [
+      { id: "var_cha_250", title: "Pot de 250g", calculated_price: { calculated_amount: 820, currency_code: "eur" } }
+    ]
+  },
+  {
+    id: "prod_aca",
+    handle: "miel-d-acacia",
+    title: "Miel d'Acacia du Jura",
+    subtitle: "Liquide, très doux, délicat",
+    description: "Un miel très clair, liquide et particulièrement doux en bouche. Sa douceur convient à toute la famille.",
+    variants: [
+      { id: "var_aca_250", title: "Pot de 250g", calculated_price: { calculated_amount: 690, currency_code: "eur" } }
+    ]
+  }
+];
+
+const displayProducts = products.length > 0 ? products : fallbackProducts;
+
+// 3. Articles de blog de secours
+const fallbackPosts = [
+  {
+    id: "post_1",
+    slug: "secrets-de-l-apiculture-biologique",
+    title: "Les Secrets de l'Apiculture Biologique",
+    excerpt: "Comment nos apiculteurs prennent soin des colonies tout au long de l'année pour garantir un miel 100% naturel et pur.",
+    publishedAt: "2026-05-10T10:00:00.000Z"
+  },
+  {
+    id: "post_2",
+    slug: "bienfaits-du-miel-de-lavande",
+    title: "Le Miel de Lavande : Un Trésor pour le Sommeil",
+    excerpt: "Découvrez comment les principes actifs des fleurs de lavande se retrouvent dans notre miel pour apaiser le corps et l'esprit.",
+    publishedAt: "2026-05-15T08:30:00.000Z"
+  }
+];
+
+const displayPosts = blogPosts && blogPosts.length > 0 ? blogPosts : fallbackPosts;
+
+// Récupérer le titre de la page pour la balise title SEO
+const pageTitle = homePage?.seo?.title ?? "Miel Artisanal d'Exception Direct Apiculteur";
 ---
 
-<html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{home?.seo?.title ?? 'Miel artisanal'}</title>
-    <meta name="description" content={home?.seo?.description ?? 'Miel artisanal direct producteur.'} />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <header class="hero">
-      <img src="/honey-hero.png" alt="Miel artisanal" class="hero-img" />
-      <div class="hero-content">
-        <h1 class="hero-title">{home?.title ?? 'Miel Artisanal Premium'}</h1>
-        <p class="hero-subtitle">Découvrez notre sélection de miels purs et naturels, récoltés avec passion.</p>
-        <button class="btn">Découvrir</button>
+<Layout title={pageTitle}>
+  
+  {homePage && homePage.layout && homePage.layout.length > 0 ? (
+    homePage.layout.map((block) => {
+      switch (block.blockType) {
+        case 'hero':
+          return (
+            <section class="relative min-h-[90vh] flex items-center justify-center overflow-hidden py-24 px-4 bg-[#fdfbf9] border-b border-amber-900/5">
+              <div class="absolute inset-0 z-0">
+                <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-amber-200/20 rounded-full blur-[100px]" />
+                <div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-orange-100/30 rounded-full blur-[120px]" />
+              </div>
+              <div class="absolute inset-0 opacity-[0.02] z-0 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:24px_24px]" />
+              <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10 w-full">
+                <div class="lg:col-span-7 flex flex-col items-start gap-6 text-left">
+                  {block.badge && (
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100/60 rounded-full text-xs font-semibold text-amber-900 border border-amber-200/50">
+                      {block.badge}
+                    </div>
+                  )}
+                  <h1 class="font-display text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-stone-900 leading-[1.08] drop-shadow-sm">
+                    {block.title}{' '}
+                    {block.titleColored && (
+                      <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-amber-700">
+                        {block.titleColored}
+                      </span>
+                    )}
+                  </h1>
+                  {block.subtitle && (
+                    <p class="text-lg sm:text-xl text-stone-600 max-w-2xl font-light leading-relaxed">
+                      {block.subtitle}
+                    </p>
+                  )}
+                  <div class="flex flex-wrap items-center gap-4 mt-4 w-full sm:w-auto">
+                    {block.primaryCtaText && (
+                      <a
+                        href={block.primaryCtaLink ?? '/boutique'}
+                        class="w-full sm:w-auto px-8 py-4 bg-amber-600 hover:bg-amber-500 text-stone-900 rounded-full font-bold text-center transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02]"
+                      >
+                        {block.primaryCtaText}
+                      </a>
+                    )}
+                    {block.secondaryCtaText && (
+                      <a
+                        href={block.secondaryCtaLink ?? '/histoire'}
+                        class="w-full sm:w-auto px-8 py-4 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/60 rounded-full font-semibold text-center transition-colors duration-300"
+                      >
+                        {block.secondaryCtaText}
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {block.showPot && (
+                  <div class="lg:col-span-5 flex justify-center relative">
+                    <div class="relative w-72 h-96 sm:w-80 sm:h-[420px] rounded-[40px] bg-gradient-to-b from-amber-400 to-amber-600/90 shadow-2xl p-0.5 transform rotate-3 hover:rotate-0 transition-transform duration-500 honey-glow flex items-center justify-center overflow-hidden group">
+                      <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent)]" />
+                      <div class="absolute top-0 left-0 right-0 h-[25%] bg-amber-300/30 backdrop-blur-sm flex items-center justify-center font-display text-[9rem] opacity-20 pointer-events-none select-none">
+                        🍯
+                      </div>
+                      <div class="flex flex-col items-center justify-center text-center p-8 bg-stone-900/10 backdrop-blur-[2px] rounded-[38px] w-full h-full border border-white/10 relative z-10 text-white">
+                        <span class="text-7xl mb-4 transform group-hover:scale-110 transition-transform duration-500">
+                          🍯
+                        </span>
+                        <span class="font-display text-3xl font-semibold drop-shadow-md">
+                          {block.potTitle ?? 'Cuvée Royale'}
+                        </span>
+                        <span class="text-xs uppercase tracking-widest text-amber-200 mt-2 font-semibold">
+                          {block.potSubtitle ?? 'Édition Limitée'}
+                        </span>
+                        <div class="mt-8 pt-6 border-t border-white/20 w-full flex justify-between items-center px-4">
+                          <span class="text-sm font-medium opacity-90">
+                            {block.potBottomLeft ?? 'Miel de Printemps'}
+                          </span>
+                          <span class="font-semibold text-lg bg-amber-500/90 text-stone-900 px-3 py-1 rounded-full text-sm">
+                            {block.potBottomRight ?? 'Bio'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+          );
+
+        case 'pageHeader':
+          return (
+            <section class="relative py-24 px-4 bg-amber-50/20 border-b border-amber-900/5 overflow-hidden">
+              <div class="absolute inset-0 z-0">
+                <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-amber-200/20 rounded-full blur-[100px]" />
+              </div>
+              <div class="max-w-4xl mx-auto text-center relative z-10 space-y-6">
+                {block.badge && (
+                  <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100/60 rounded-full text-xs font-semibold text-amber-900 border border-amber-200/50">
+                    {block.badge}
+                  </div>
+                )}
+                <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 leading-tight">
+                  {block.title}
+                </h1>
+                {block.description && (
+                  <p class="text-lg sm:text-xl text-stone-600 max-w-2xl mx-auto font-light leading-relaxed">
+                    {block.description}
+                  </p>
+                )}
+              </div>
+            </section>
+          );
+
+        case 'values':
+          return (
+            <section class="py-24 px-4 max-w-7xl mx-auto">
+              <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+                <h2 class="font-display text-4xl sm:text-5xl font-bold text-stone-900">
+                  {block.title}
+                </h2>
+                {block.subtitle && (
+                  <p class="text-stone-500 font-light">{block.subtitle}</p>
+                )}
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {block.items?.map((item) => (
+                  <div class="bg-white p-8 rounded-3xl border border-amber-900/5 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-start gap-4">
+                    {item.emoji && (
+                      <span class="text-4xl p-3 bg-amber-50 rounded-2xl">
+                        {item.emoji}
+                      </span>
+                    )}
+                    <h3 class="font-display text-xl font-bold text-stone-900">
+                      {item.title}
+                    </h3>
+                    <p class="text-sm text-stone-500 leading-relaxed font-light">
+                      {item.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+
+        case 'story':
+          return (
+            <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                <div class="md:col-span-7 space-y-4">
+                  <h2 class="font-display text-3xl font-bold text-stone-900">
+                    {block.title}
+                  </h2>
+                  {block.paragraphs?.map((p) => (
+                    <p class="text-stone-600 leading-relaxed font-light mb-4">
+                      {p.text}
+                    </p>
+                  ))}
+                </div>
+                <div class="md:col-span-5 h-72 bg-amber-50 border border-amber-200 rounded-3xl flex items-center justify-center text-7xl select-none shadow-sm rotate-1">
+                  {block.emojis ?? '🍯'}
+                </div>
+              </div>
+            </section>
+          );
+
+        case 'engagements':
+          return (
+            <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+              <div class="bg-amber-50/30 p-8 sm:p-12 rounded-[32px] border border-amber-900/5 space-y-8">
+                <div class="text-center max-w-2xl mx-auto space-y-3">
+                  {block.badge && <span class="text-4xl">{block.badge}</span>}
+                  <h2 class="font-display text-3xl font-bold text-stone-900">
+                    {block.title}
+                  </h2>
+                  {block.subtitle && (
+                    <p class="text-stone-500 font-light text-sm">{block.subtitle}</p>
+                  )}
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
+                  {block.items?.map((item) => (
+                    <div class="bg-white p-6 rounded-2xl border border-amber-900/5 shadow-xs space-y-2">
+                      <h4 class="font-display font-semibold text-stone-900 text-lg flex items-center gap-2">
+                        {item.emoji && <span>{item.emoji}</span>}
+                        {item.title}
+                      </h4>
+                      <p class="text-xs text-stone-500 leading-relaxed font-light">
+                        {item.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          );
+
+        case 'quote':
+          return (
+            <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+              <div class="text-center max-w-2xl mx-auto space-y-4 pt-6">
+                <p class="font-display italic text-2xl text-amber-900/90 leading-relaxed">
+                  {block.quote}
+                </p>
+                {block.author && (
+                  <div class="text-xs text-stone-400 font-semibold uppercase tracking-widest">
+                    — {block.author}
+                  </div>
+                )}
+              </div>
+            </section>
+          );
+
+        case 'featuredProducts':
+          return (
+            <section class="py-24 px-4 bg-amber-50/30 border-y border-amber-900/5">
+              <div class="max-w-7xl mx-auto">
+                <div class="flex flex-col sm:flex-row justify-between items-end mb-16 gap-6">
+                  <div class="space-y-4">
+                    <h2 class="font-display text-4xl sm:text-5xl font-bold text-stone-900">
+                      {block.title}
+                    </h2>
+                    {block.subtitle && (
+                      <p class="text-stone-500 max-w-lg font-light">{block.subtitle}</p>
+                    )}
+                  </div>
+                  <a
+                    href={block.ctaLink ?? '/boutique'}
+                    class="px-6 py-3 bg-white hover:bg-amber-50 text-amber-900 border border-amber-200 rounded-full font-semibold text-sm transition-all duration-300 shadow-sm"
+                  >
+                    {block.ctaText ?? 'Tout le catalogue'}
+                  </a>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {displayProducts.map((p) => {
+                    const firstVariant = p.variants?.[0];
+                    const price =
+                      (firstVariant?.calculated_price?.calculated_amount ?? 750) / 100;
+                    const currency =
+                      firstVariant?.calculated_price?.currency_code?.toUpperCase() ??
+                      'EUR';
+                    const formattedPrice = new Intl.NumberFormat('fr-FR', {
+                      style: 'currency',
+                      currency: currency,
+                    }).format(price);
+
+                    return (
+                      <div class="bg-white rounded-3xl border border-amber-900/5 p-6 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col justify-between group">
+                        <div>
+                          <div class="flex justify-between items-center mb-6">
+                            <span class="px-2.5 py-1 bg-emerald-50 text-emerald-800 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                              Bio
+                            </span>
+                            <span class="text-xs text-stone-400 font-medium">
+                              🍯 Cru Artisanal
+                            </span>
+                          </div>
+                          <div class="h-48 bg-amber-50 rounded-2xl flex items-center justify-center text-6xl group-hover:scale-105 transition-transform duration-500 mb-6 border border-amber-100">
+                            🍯
+                          </div>
+                          <h3 class="font-display text-2xl font-bold text-stone-900 mb-1 group-hover:text-amber-700 transition-colors duration-300">
+                            {p.title}
+                          </h3>
+                          <p class="text-xs font-semibold text-amber-800 uppercase tracking-wider mb-3">
+                            {p.subtitle ?? 'Miel Pur & Naturel'}
+                          </p>
+                          <p class="text-sm text-stone-500 font-light leading-relaxed line-clamp-3 mb-6">
+                            {p.description}
+                          </p>
+                        </div>
+                        <div class="pt-6 border-t border-amber-900/5 flex items-center justify-between mt-auto">
+                          <div class="flex flex-col">
+                            <span class="text-xs text-stone-400">À partir de</span>
+                            <span class="text-2xl font-bold text-amber-950 font-display">
+                              {formattedPrice}
+                            </span>
+                          </div>
+                          {firstVariant ? (
+                            <button
+                              class="add-to-cart-btn px-5 py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 rounded-full font-bold text-sm transition-all duration-300 hover:scale-105 flex items-center gap-1.5 shadow-sm"
+                              data-variant-id={firstVariant.id}
+                            >
+                              <span>Ajouter</span>
+                              <span>🛒</span>
+                            </button>
+                          ) : (
+                            <a
+                              href={`/boutique/${p.handle}`}
+                              class="px-5 py-3 bg-amber-50 text-amber-950 rounded-full font-semibold text-sm hover:bg-amber-100 transition-colors"
+                            >
+                              Découvrir
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          );
+
+        case 'latestPosts':
+          return (
+            <section class="py-24 px-4 max-w-7xl mx-auto">
+              <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+                <h2 class="font-display text-4xl sm:text-5xl font-bold text-stone-900">
+                  {block.title}
+                </h2>
+                {block.subtitle && (
+                  <p class="text-stone-500 font-light">{block.subtitle}</p>
+                )}
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {displayPosts.map((post) => (
+                  <article class="bg-[#fcfcfb] rounded-3xl border border-amber-900/5 overflow-hidden flex flex-col sm:flex-row shadow-sm hover:shadow-md transition-all duration-300">
+                    <div class="sm:w-1/3 bg-amber-100 flex items-center justify-center text-4xl p-6 min-h-[150px] sm:min-h-auto">
+                      🐝
+                    </div>
+                    <div class="p-8 sm:w-2/3 flex flex-col justify-between gap-4">
+                      <div class="space-y-2">
+                        <span class="text-xs text-stone-400 font-medium">
+                          {post.publishedAt
+                            ? new Date(post.publishedAt).toLocaleDateString('fr-FR', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              })
+                            : 'Actualité'}
+                        </span>
+                        <h3 class="font-display text-xl font-bold text-stone-900 line-clamp-2 hover:text-amber-700 transition-colors">
+                          {post.title}
+                        </h3>
+                        <p class="text-sm text-stone-500 font-light line-clamp-3 leading-relaxed">
+                          {post.excerpt ?? 'Lire notre nouvel article édité avec soin.'}
+                        </p>
+                      </div>
+                      <a
+                        href={`/recettes-bienfaits/${post.slug}`}
+                        class="text-sm font-semibold text-amber-700 hover:text-amber-950 transition-colors flex items-center gap-1 mt-2"
+                      >
+                        <span>Lire la suite</span>
+                        <span>→</span>
+                      </a>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          );
+
+        default:
+          return null;
+      }
+    })
+  ) : (
+    <!-- HERO SECTION IMMERSIVE (STATIC FALLBACK) -->
+    <section class="relative min-h-[90vh] flex items-center justify-center overflow-hidden py-24 px-4 bg-[#fdfbf9] border-b border-amber-900/5">
+      <div class="absolute inset-0 z-0">
+        <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-amber-200/20 rounded-full blur-[100px]" />
+        <div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-orange-100/30 rounded-full blur-[120px]" />
       </div>
-    </header>
-    <main>
-      <section class="products-section">
-        <h2 class="section-title">Notre Sélection</h2>
-        <div class="products-grid">
-          {products.length > 0 ? products.map((p) => (
-            <div class="product-card">
-              <h3 class="product-title">{p.title}</h3>
-              <a href={`/produits/${p.handle}`} class="product-link">Voir les détails</a>
-            </div>
-          )) : (
-            <>
-              <div class="product-card">
-                <h3 class="product-title">Miel de Lavande</h3>
-                <a href="#" class="product-link">Voir les détails</a>
-              </div>
-              <div class="product-card">
-                <h3 class="product-title">Miel de Châtaignier</h3>
-                <a href="#" class="product-link">Voir les détails</a>
-              </div>
-              <div class="product-card">
-                <h3 class="product-title">Miel d'Acacia</h3>
-                <a href="#" class="product-link">Voir les détails</a>
-              </div>
-            </>
-          )}
+      <div class="absolute inset-0 opacity-[0.02] z-0 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:24px_24px]" />
+      <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10 w-full">
+        <div class="lg:col-span-7 flex flex-col items-start gap-6 text-left">
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100/60 rounded-full text-xs font-semibold text-amber-900 border border-amber-200/50">
+            <span>✨</span> récolte artisanale française & biologique
+          </div>
+          <h1 class="font-display text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-stone-900 leading-[1.08] drop-shadow-sm">
+            Le goût pur de la <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-amber-700">nature préservée</span>.
+          </h1>
+          <p class="text-lg sm:text-xl text-stone-600 max-w-2xl font-light leading-relaxed">
+            Chaque pot de notre collection est le fruit du travail méticuleux de nos abeilles au cœur des plus beaux terroirs français. Non chauffé, non filtré, pour conserver tous ses bienfaits originels.
+          </p>
+          <div class="flex flex-wrap items-center gap-4 mt-4 w-full sm:w-auto">
+            <a 
+              href="/boutique" 
+              class="w-full sm:w-auto px-8 py-4 bg-amber-600 hover:bg-amber-500 text-stone-900 rounded-full font-bold text-center transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02]"
+            >
+              Découvrir notre Cave à Miels
+            </a>
+            <a 
+              href="/histoire" 
+              class="w-full sm:w-auto px-8 py-4 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/60 rounded-full font-semibold text-center transition-colors duration-300"
+            >
+              Notre engagement apicole
+            </a>
+          </div>
         </div>
-      </section>
-    </main>
-  </body>
-</html>
+
+        <div class="lg:col-span-5 flex justify-center relative">
+          <div class="relative w-72 h-96 sm:w-80 sm:h-[420px] rounded-[40px] bg-gradient-to-b from-amber-400 to-amber-600/90 shadow-2xl p-0.5 transform rotate-3 hover:rotate-0 transition-transform duration-500 honey-glow flex items-center justify-center overflow-hidden group">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent)]" />
+            <div class="absolute top-0 left-0 right-0 h-[25%] bg-amber-300/30 backdrop-blur-sm flex items-center justify-center font-display text-[9rem] opacity-20 pointer-events-none select-none">🍯</div>
+            <div class="flex flex-col items-center justify-center text-center p-8 bg-stone-900/10 backdrop-blur-[2px] rounded-[38px] w-full h-full border border-white/10 relative z-10 text-white">
+              <span class="text-7xl mb-4 transform group-hover:scale-110 transition-transform duration-500">🍯</span>
+              <span class="font-display text-3xl font-semibold drop-shadow-md">Cuvée Royale</span>
+              <span class="text-xs uppercase tracking-widest text-amber-200 mt-2 font-semibold">Édition Limitée</span>
+              <div class="mt-8 pt-6 border-t border-white/20 w-full flex justify-between items-center px-4">
+                <span class="text-sm font-medium opacity-90">Miel de Printemps</span>
+                <span class="font-semibold text-lg bg-amber-500/90 text-stone-900 px-3 py-1 rounded-full text-sm">Bio</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VALEURS & APICULTURE (STATIC FALLBACK) -->
+    <section class="py-24 px-4 max-w-7xl mx-auto">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <h2 class="font-display text-4xl sm:text-5xl font-bold text-stone-900">Un artisanat respectueux de la biodiversité</h2>
+        <p class="text-stone-500 font-light">Nous plaçons la santé de nos colonies et le respect du rythme naturel au cœur de notre métier d'apiculteur.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="bg-white p-8 rounded-3xl border border-amber-900/5 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-start gap-4">
+          <span class="text-4xl p-3 bg-amber-50 rounded-2xl">🌱</span>
+          <h3 class="font-display text-xl font-bold text-stone-900">Éco-responsabilité</h3>
+          <p class="text-sm text-stone-500 leading-relaxed font-light">
+            Ruchers installés exclusivement dans des parcs naturels préservés et des zones de flore biologique préservées de toute pollution chimique.
+          </p>
+        </div>
+
+        <div class="bg-white p-8 rounded-3xl border border-amber-900/5 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-start gap-4">
+          <span class="text-4xl p-3 bg-amber-50 rounded-2xl">🍯</span>
+          <h3 class="font-display text-xl font-bold text-stone-900">Extraction à froid</h3>
+          <p class="text-sm text-stone-500 leading-relaxed font-light">
+            Notre miel est désoperculé et extrait à froid par force centrifuge simple, préservant ainsi intacts les enzymes, minéraux et antioxydants.
+          </p>
+        </div>
+
+        <div class="bg-white p-8 rounded-3xl border border-amber-900/5 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-start gap-4">
+          <span class="text-4xl p-3 bg-amber-50 rounded-2xl">🤝</span>
+          <h3 class="font-display text-xl font-bold text-stone-900">Direct Apiculteur</h3>
+          <p class="text-sm text-stone-500 leading-relaxed font-light">
+            Un circuit 100% court sans intermédiaires. Du rucher à votre table de cuisine, pour une traçabilité totale et une rémunération juste.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRODUITS VEDETTES (STATIC FALLBACK) -->
+    <section class="py-24 px-4 bg-amber-50/30 border-y border-amber-900/5">
+      <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col sm:flex-row justify-between items-end mb-16 gap-6">
+          <div class="space-y-4">
+            <h2 class="font-display text-4xl sm:text-5xl font-bold text-stone-900">Nos miels d'exception</h2>
+            <p class="text-stone-500 max-w-lg font-light">Découvrez notre gamme de crus artisanaux récoltés avec soin.</p>
+          </div>
+          <a 
+            href="/boutique" 
+            class="px-6 py-3 bg-white hover:bg-amber-50 text-amber-900 border border-amber-200 rounded-full font-semibold text-sm transition-all duration-300 shadow-sm"
+          >
+            Tout le catalogue
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {displayProducts.map((p) => {
+            const firstVariant = p.variants?.[0];
+            const price = (firstVariant?.calculated_price?.calculated_amount ?? 750) / 100;
+            const currency = firstVariant?.calculated_price?.currency_code?.toUpperCase() ?? 'EUR';
+            const formattedPrice = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency }).format(price);
+
+            return (
+              <div class="bg-white rounded-3xl border border-amber-900/5 p-6 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col justify-between group">
+                <div>
+                  <div class="flex justify-between items-center mb-6">
+                    <span class="px-2.5 py-1 bg-emerald-50 text-emerald-800 text-[10px] font-bold rounded-full uppercase tracking-wider">Bio</span>
+                    <span class="text-xs text-stone-400 font-medium">🍯 Cru Artisanal</span>
+                  </div>
+                  <div class="h-48 bg-amber-50 rounded-2xl flex items-center justify-center text-6xl group-hover:scale-105 transition-transform duration-500 mb-6 border border-amber-100">
+                    🍯
+                  </div>
+                  <h3 class="font-display text-2xl font-bold text-stone-900 mb-1 group-hover:text-amber-700 transition-colors duration-300">
+                    {p.title}
+                  </h3>
+                  <p class="text-xs font-semibold text-amber-800 uppercase tracking-wider mb-3">
+                    {p.subtitle ?? 'Miel Pur & Naturel'}
+                  </p>
+                  <p class="text-sm text-stone-500 font-light leading-relaxed line-clamp-3 mb-6">
+                    {p.description}
+                  </p>
+                </div>
+
+                <div class="pt-6 border-t border-amber-900/5 flex items-center justify-between mt-auto">
+                  <div class="flex flex-col">
+                    <span class="text-xs text-stone-400">À partir de</span>
+                    <span class="text-2xl font-bold text-amber-950 font-display">{formattedPrice}</span>
+                  </div>
+                  
+                  {firstVariant ? (
+                    <button 
+                      class="add-to-cart-btn px-5 py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 rounded-full font-bold text-sm transition-all duration-300 hover:scale-105 flex items-center gap-1.5 shadow-sm"
+                      data-variant-id={firstVariant.id}
+                    >
+                      <span>Ajouter</span>
+                      <span>🛒</span>
+                    </button>
+                  ) : (
+                    <a 
+                      href={`/boutique/${p.handle}`}
+                      class="px-5 py-3 bg-amber-50 text-amber-950 rounded-full font-semibold text-sm hover:bg-amber-100 transition-colors"
+                    >
+                      Découvrir
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+
+    <!-- DERNIÈRES NOUVELLES DE LA RUCHE (STATIC FALLBACK) -->
+    <section class="py-24 px-4 max-w-7xl mx-auto">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <h2 class="font-display text-4xl sm:text-5xl font-bold text-stone-900">Le journal de la miellerie</h2>
+        <p class="text-stone-500 font-light">Actualités de nos ruchers, vie des abeilles et idées de recettes gourmandes.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {displayPosts.map((post) => (
+          <article class="bg-[#fcfcfb] rounded-3xl border border-amber-900/5 overflow-hidden flex flex-col sm:flex-row shadow-sm hover:shadow-md transition-all duration-300">
+            <div class="sm:w-1/3 bg-amber-100 flex items-center justify-center text-4xl p-6 min-h-[150px] sm:min-h-auto">
+              🐝
+            </div>
+            <div class="p-8 sm:w-2/3 flex flex-col justify-between gap-4">
+              <div class="space-y-2">
+                <span class="text-xs text-stone-400 font-medium">
+                  {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Actualité'}
+                </span>
+                <h3 class="font-display text-xl font-bold text-stone-900 line-clamp-2 hover:text-amber-700 transition-colors">
+                  {post.title}
+                </h3>
+                <p class="text-sm text-stone-500 font-light line-clamp-3 leading-relaxed">
+                  {post.excerpt ?? 'Lire notre nouvel article édité avec soin.'}
+                </p>
+              </div>
+              <a 
+                href={`/recettes-bienfaits/${post.slug}`} 
+                class="text-sm font-semibold text-amber-700 hover:text-amber-950 transition-colors flex items-center gap-1 mt-2"
+              >
+                <span>Lire la suite</span>
+                <span>→</span>
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )}
+
+</Layout>
+
+<script>
+  // Gérer l'ajout au panier AJAX
+  document.querySelectorAll('.add-to-cart-btn').forEach((btn: any) => {
+    btn.addEventListener('click', (e: Event) => {
+      e.preventDefault();
+      const variantId = btn.dataset.variantId;
+      if (!variantId) return;
+
+      // Déclencher l'événement personnalisé pour le CartDrawer
+      window.dispatchEvent(
+        new CustomEvent('add-to-cart', {
+          detail: {
+            variantId,
+            quantity: 1,
+          },
+        })
+      );
+    });
+  });
+</script>

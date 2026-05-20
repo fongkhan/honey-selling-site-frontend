@@ -1,5 +1,8 @@
 const MEDUSA_URL = import.meta.env.MEDUSA_PUBLIC_URL ?? 'http://localhost:9000';
-const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
+const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? (typeof process !== 'undefined' ? process.env.MEDUSA_PUBLISHABLE_KEY : '') ?? '';
+
+console.log('[Medusa Client] Configured URL:', MEDUSA_URL);
+console.log('[Medusa Client] Loaded Publishable Key (first 10 chars):', PUBLISHABLE_KEY ? PUBLISHABLE_KEY.substring(0, 10) + '...' : 'MISSING');
 
 async function medusaFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${MEDUSA_URL.replace(/\/$/, '')}/store${path}`;
@@ -15,6 +18,18 @@ async function medusaFetch<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(`Medusa ${res.status} on ${url}: ${await res.text()}`);
   }
   return res.json() as Promise<T>;
+}
+
+async function getDefaultRegionId(): Promise<string | null> {
+  try {
+    const data = await medusaFetch<{ regions: { id: string }[] }>('/regions');
+    if (data.regions && data.regions.length > 0) {
+      return data.regions[0].id;
+    }
+  } catch (err) {
+    console.warn('[Medusa Client] Failed to fetch regions:', err);
+  }
+  return null;
 }
 
 export type MedusaProduct = {
@@ -35,12 +50,14 @@ export type MedusaProduct = {
 };
 
 export const medusa = {
-  products: () =>
-    medusaFetch<{ products: MedusaProduct[]; count: number }>(
-      '/products?limit=200&fields=*variants,*variants.calculated_price,*images,+thumbnail',
-    ),
-  product: (handle: string) =>
-    medusaFetch<{ products: MedusaProduct[] }>(
-      `/products?handle=${encodeURIComponent(handle)}&fields=*variants,*variants.calculated_price,*images,+thumbnail`,
-    ),
+  products: async () => {
+    const regionId = await getDefaultRegionId();
+    const query = `/products?limit=200&fields=*variants,*variants.calculated_price,*images,+thumbnail` + (regionId ? `&region_id=${regionId}` : '');
+    return medusaFetch<{ products: MedusaProduct[]; count: number }>(query);
+  },
+  product: async (handle: string) => {
+    const regionId = await getDefaultRegionId();
+    const query = `/products?handle=${encodeURIComponent(handle)}&fields=*variants,*variants.calculated_price,*images,+thumbnail` + (regionId ? `&region_id=${regionId}` : '');
+    return medusaFetch<{ products: MedusaProduct[] }>(query);
+  },
 };

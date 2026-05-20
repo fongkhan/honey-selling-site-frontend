@@ -1,0 +1,335 @@
+---
+const MEDUSA_URL = import.meta.env.MEDUSA_PUBLIC_URL ?? 'http://localhost:9000';
+const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? (typeof process !== 'undefined' ? process.env.MEDUSA_PUBLISHABLE_KEY : '') ?? '';
+---
+<!-- Tiroir de panier latéral interactif -->
+<div 
+  id="cart-drawer-container" 
+  data-medusa-url={MEDUSA_URL}
+  data-publishable-key={PUBLISHABLE_KEY}
+  class="fixed inset-0 z-50 pointer-events-none transition-all duration-500 opacity-0 invisible"
+  aria-modal="true"
+  role="dialog"
+>
+  <!-- Fond noir transparent cliquable -->
+  <div 
+    id="cart-overlay" 
+    class="absolute inset-0 bg-stone-950/40 backdrop-blur-sm pointer-events-auto cursor-pointer"
+  ></div>
+
+  <!-- Tiroir de panier -->
+  <div 
+    id="cart-drawer" 
+    class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-[#fdfbf9]/95 backdrop-blur-md border-l border-amber-900/10 pointer-events-auto transform translate-x-full transition-transform duration-500 shadow-2xl flex flex-col"
+  >
+    <!-- Entête -->
+    <div class="p-6 border-b border-amber-900/10 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🍯</span>
+        <h2 class="font-display text-xl font-semibold text-amber-950">Votre Panier</h2>
+      </div>
+      <button 
+        id="close-cart-btn" 
+        class="p-2 text-stone-400 hover:text-amber-900 rounded-full hover:bg-amber-50 transition-colors"
+        aria-label="Fermer le panier"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Contenu du panier (Dynamique) -->
+    <div id="cart-items-container" class="flex-grow overflow-y-auto p-6 space-y-6">
+      <!-- État vide par défaut -->
+      <div id="cart-empty-state" class="flex flex-col items-center justify-center h-full text-center space-y-4">
+        <span class="text-5xl animate-bounce">🐝</span>
+        <p class="text-stone-500 font-medium">Votre panier est encore vide.</p>
+        <p class="text-xs text-stone-400 max-w-[250px]">Laissez-vous tenter par nos miels crémeux et savoureux !</p>
+        <a 
+          href="/boutique" 
+          class="inline-block px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-stone-900 rounded-full text-sm font-semibold transition-colors mt-2"
+        >
+          Découvrir les miels
+        </a>
+      </div>
+
+      <!-- Liste des articles (Injectée en JS) -->
+      <div id="cart-list" class="hidden space-y-4"></div>
+    </div>
+
+    <!-- Pied de panier (Calculs & CTA) -->
+    <div id="cart-footer" class="p-6 border-t border-amber-900/10 bg-amber-50/50 hidden">
+      <div class="space-y-3 mb-6">
+        <div class="flex justify-between text-sm text-stone-600">
+          <span>Sous-total</span>
+          <span id="cart-subtotal">0,00 €</span>
+        </div>
+        <div class="flex justify-between text-sm text-stone-600">
+          <span>Frais de livraison</span>
+          <span class="text-amber-700 font-medium">Offerts</span>
+        </div>
+        <div class="border-t border-amber-900/10 pt-3 flex justify-between font-display font-semibold text-lg text-amber-950">
+          <span>Total</span>
+          <span id="cart-total">0,00 €</span>
+        </div>
+      </div>
+
+      <button 
+        id="checkout-btn" 
+        class="w-full py-4 bg-amber-600 hover:bg-amber-500 text-stone-900 rounded-full font-bold text-center transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+      >
+        <span>Passer la commande</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Sélections DOM
+  const container = document.getElementById('cart-drawer-container');
+
+  // Configuration d'intégration Medusa
+  const MEDUSA_URL = container?.dataset.medusaUrl || 'http://localhost:9000';
+  const PUBLISHABLE_KEY = container?.dataset.publishableKey || '';
+  const drawer = document.getElementById('cart-drawer');
+  const overlay = document.getElementById('cart-overlay');
+  const openBtn = document.getElementById('open-cart-btn');
+  const closeBtn = document.getElementById('close-cart-btn');
+  const cartBadge = document.getElementById('cart-badge');
+  const emptyState = document.getElementById('cart-empty-state');
+  const cartList = document.getElementById('cart-list');
+  const cartFooter = document.getElementById('cart-footer');
+  const subtotalText = document.getElementById('cart-subtotal');
+  const totalText = document.getElementById('cart-total');
+
+  // État local du panier
+  let cartId = localStorage.getItem('medusa_cart_id');
+  if (cartId === 'null' || cartId === 'undefined') {
+    cartId = null;
+    localStorage.removeItem('medusa_cart_id');
+  }
+
+  // Ouvrir / Fermer
+  function openCart() {
+    container?.classList.remove('opacity-0', 'invisible');
+    container?.classList.add('pointer-events-auto');
+    drawer?.classList.remove('translate-x-full');
+    fetchCart();
+  }
+
+  function closeCart() {
+    container?.classList.add('opacity-0', 'invisible');
+    container?.classList.remove('pointer-events-auto');
+    drawer?.classList.add('translate-x-full');
+  }
+
+  openBtn?.addEventListener('click', openCart);
+  closeBtn?.addEventListener('click', closeCart);
+  overlay?.addEventListener('click', closeCart);
+
+  // Appels API Medusa Store
+  async function medusaFetch(path: string, options: RequestInit = {}) {
+    const url = `${MEDUSA_URL}/store${path}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-publishable-api-key': PUBLISHABLE_KEY,
+      ...(options.headers || {}),
+    };
+    const res = await fetch(url, { ...options, headers });
+    if (!res.ok) {
+      throw new Error(`Medusa API Error: ${res.status}`);
+    }
+    return res.json();
+  }
+
+  // Création du panier
+  async function createCart() {
+    try {
+      const data = await medusaFetch('/carts', { method: 'POST', body: JSON.stringify({}) });
+      cartId = data.cart.id;
+      localStorage.setItem('medusa_cart_id', cartId!);
+      return cartId;
+    } catch (e) {
+      console.error('Impossible de créer le panier Medusa', e);
+      return null;
+    }
+  }
+
+  // Ajouter au panier
+  window.addEventListener('add-to-cart', async (e: any) => {
+    const { variantId, quantity } = e.detail;
+    openCart();
+    
+    // Mettre en chargement
+    if (cartList) cartList.style.opacity = '0.5';
+
+    if (!cartId) {
+      await createCart();
+    }
+
+    if (!cartId) {
+      console.error('Impossible de continuer sans panier Medusa valide');
+      if (cartList) cartList.style.opacity = '1';
+      return;
+    }
+
+    try {
+      await medusaFetch(`/carts/${cartId}/line-items`, {
+        method: 'POST',
+        body: JSON.stringify({ variant_id: variantId, quantity }),
+      });
+      await fetchCart();
+    } catch (err) {
+      console.error('Erreur ajout panier, tentative de recréation du panier...', err);
+      cartId = null;
+      localStorage.removeItem('medusa_cart_id');
+      await createCart();
+      if (cartId) {
+        try {
+          await medusaFetch(`/carts/${cartId}/line-items`, {
+            method: 'POST',
+            body: JSON.stringify({ variant_id: variantId, quantity }),
+          });
+          await fetchCart();
+        } catch (err2) {
+          console.error('Échec définitif de l\'ajout au panier', err2);
+        }
+      } else {
+        console.error('Impossible de recréer le panier après erreur');
+      }
+      if (cartList) cartList.style.opacity = '1';
+    }
+  });
+
+  // Mettre à jour une quantité
+  async function updateQuantity(itemId: string, newQty: number) {
+    if (!cartId) return;
+    if (cartList) cartList.style.opacity = '0.5';
+    
+    try {
+      if (newQty <= 0) {
+        await medusaFetch(`/carts/${cartId}/line-items/${itemId}`, { method: 'DELETE' });
+      } else {
+        await medusaFetch(`/carts/${cartId}/line-items/${itemId}`, {
+          method: 'POST',
+          body: JSON.stringify({ quantity: newQty }),
+        });
+      }
+      await fetchCart();
+    } catch (e) {
+      console.error('Erreur mise à jour quantité', e);
+    }
+  }
+
+  // Récupérer le panier
+  async function fetchCart() {
+    if (!cartId) {
+      updateCartUI(null);
+      return;
+    }
+
+    try {
+      const data = await medusaFetch(`/carts/${cartId}`);
+      updateCartUI(data.cart);
+    } catch (e) {
+      console.error('Erreur récupération panier', e);
+      cartId = null;
+      localStorage.removeItem('medusa_cart_id');
+      updateCartUI(null);
+    }
+  }
+
+  // Mettre à jour le DOM
+  function updateCartUI(cart: any) {
+    if (cartList) cartList.style.opacity = '1';
+    
+    if (!cart || !cart.items || cart.items.length === 0) {
+      // Panier vide
+      emptyState?.classList.remove('hidden');
+      cartList?.classList.add('hidden');
+      cartFooter?.classList.add('hidden');
+      if (cartBadge) {
+        cartBadge.classList.add('scale-0');
+        cartBadge.innerText = '0';
+      }
+      return;
+    }
+
+    // Remplir le panier
+    emptyState?.classList.add('hidden');
+    cartList?.classList.remove('hidden');
+    cartFooter?.classList.remove('hidden');
+
+    // Compter les articles
+    const totalItems = cart.items.reduce((acc: number, item: any) => acc + item.quantity, 0);
+    if (cartBadge) {
+      cartBadge.classList.remove('scale-0');
+      cartBadge.innerText = totalItems.toString();
+    }
+
+    // Formater le prix (reçoit les centimes du backend et les convertit en Euros)
+    const formatPrice = (amount: number) => {
+      return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount / 100);
+    };
+
+    if (subtotalText) subtotalText.innerText = formatPrice(cart.subtotal);
+    if (totalText) totalText.innerText = formatPrice(cart.total);
+
+    // Dessiner les items
+    if (cartList) {
+      cartList.innerHTML = cart.items.map((item: any) => `
+        <div class="flex items-center gap-4 bg-white p-4 rounded-xl border border-amber-900/5 hover:border-amber-500/20 transition-all duration-300">
+          <div class="h-16 w-16 bg-amber-50 rounded-lg flex items-center justify-center font-display text-2xl border border-amber-100">
+            🍯
+          </div>
+          <div class="flex-grow min-w-0">
+            <h4 class="font-display font-medium text-stone-900 truncate">${item.title}</h4>
+            <p class="text-xs text-stone-400 mt-0.5">Format: ${item.variant_title || (item.variant ? item.variant.title : '')}</p>
+            <div class="flex items-center justify-between mt-2">
+              <span class="text-sm font-semibold text-amber-950">${formatPrice(item.unit_price * item.quantity)}</span>
+              
+              <!-- Compteur de quantité -->
+              <div class="flex items-center border border-stone-200 rounded-full bg-stone-50 overflow-hidden">
+                <button 
+                  class="qty-minus px-2 py-0.5 hover:bg-amber-100/50 text-stone-500 transition-colors font-bold text-xs"
+                  data-id="${item.id}"
+                  data-qty="${item.quantity}"
+                >-</button>
+                <span class="px-2.5 text-xs font-semibold text-stone-700 select-none">${item.quantity}</span>
+                <button 
+                  class="qty-plus px-2 py-0.5 hover:bg-amber-100/50 text-stone-500 transition-colors font-bold text-xs"
+                  data-id="${item.id}"
+                  data-qty="${item.quantity}"
+                >+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Attacher les écouteurs de quantité
+      document.querySelectorAll('.qty-minus').forEach((btn: any) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          const qty = parseInt(btn.dataset.qty);
+          updateQuantity(id, qty - 1);
+        });
+      });
+
+      document.querySelectorAll('.qty-plus').forEach((btn: any) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          const qty = parseInt(btn.dataset.qty);
+          updateQuantity(id, qty + 1);
+        });
+      });
+    }
+  }
+
+  // Initialiser l'état du badge de panier au chargement
+  fetchCart();
+</script>

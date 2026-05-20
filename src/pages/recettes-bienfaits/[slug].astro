@@ -1,0 +1,136 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { payload } from '../../lib/payload';
+import { lexicalToHtml } from '../../utils/lexicalRender';
+
+export async function getStaticPaths() {
+  const { docs } = await payload.posts().catch(() => ({ docs: [] }));
+  
+  const fallbackSlugs = [
+    'secrets-de-l-apiculture-biologique',
+    'bienfaits-du-miel-de-lavande',
+    'recette-pain-d-epices-moelleux-artisanal'
+  ];
+  const slugs = docs.length > 0 ? docs.map((p) => p.slug) : fallbackSlugs;
+  
+  return slugs.map((slug) => ({
+    params: { slug },
+  }));
+}
+
+const { slug } = Astro.params;
+
+// Fetch de l'article depuis le CMS Payload
+const { docs: posts } = await payload.post(slug).catch(() => ({ docs: [] }));
+const post = posts?.[0];
+
+// Fallbacks de secours en cas d'absence de données dans le CMS local
+const fallbackPosts = {
+  'secrets-de-l-apiculture-biologique': {
+    title: "Les Secrets de l'Apiculture Biologique",
+    excerpt: "Comment nos apiculteurs prennent soin des colonies tout au long de l'année pour garantir un miel 100% naturel et pur.",
+    publishedAt: "2026-05-10T10:00:00.000Z",
+    contentHTML: `
+      <p class="text-lg leading-relaxed text-stone-600 mb-6 font-light">L'apiculture biologique ne se limite pas à placer des ruches dans la nature. C'est une philosophie de travail rigoureuse qui place le bien-être de l'abeille et l'équilibre écologique au-dessus de la productivité.</p>
+      <h2 class="font-display text-2xl font-bold text-stone-900 mt-8 mb-4">1. Des emplacements rigoureusement sélectionnés</h2>
+      <p class="mb-6 font-light">Pour obtenir la certification biologique, nos ruches doivent être installées de telle sorte que, dans un rayon de 3 kilomètres autour du rucher, les sources de nectar et de pollen soient constituées essentiellement de cultures biologiques ou de flore sauvage spontanée.</p>
+      <h2 class="font-display text-2xl font-bold text-stone-900 mt-8 mb-4">2. Un habitat naturel pour nos abeilles</h2>
+      <p class="mb-6 font-light">Les ruches biologiques sont constituées de matériaux entièrement naturels (bois non traité, cire biologique). Les traitements contre les parasites comme le varroa se font uniquement avec des acides organiques naturels (acide oxalique ou formique), proscrivant tout pesticide de synthèse qui pourrait polluer la cire ou le miel.</p>
+      <h2 class="font-display text-2xl font-bold text-stone-900 mt-8 mb-4">3. Un respect du rythme et des réserves de la ruche</h2>
+      <p class="mb-6 font-light">Contrairement à l'apiculture intensive, nous ne récoltons que l'excédent de miel. À la fin de la saison, nous laissons à chaque colonie des réserves de miel et de pollen suffisantes pour qu'elles puissent hiverner en toute autonomie, sans aucun apport de sirop de sucre industriel.</p>
+    `
+  },
+  'bienfaits-du-miel-de-lavande': {
+    title: "Le Miel de Lavande : Un Trésor pour le Sommeil",
+    excerpt: "Découvrez comment les principes actifs des fleurs de lavande se retrouvent dans notre miel pour apaiser le corps et l'esprit.",
+    publishedAt: "2026-05-15T08:30:00.000Z",
+    contentHTML: `
+      <p class="text-lg leading-relaxed text-stone-600 mb-6 font-light">Récolté au cœur de la Provence pendant la floraison estivale, le miel de lavande est réputé dans le monde entier pour ses arômes délicats. Mais au-delà de son goût unique, c'est un véritable remède naturel aux multiples vertus thérapeutiques.</p>
+      <h2 class="font-display text-2xl font-bold text-stone-900 mt-8 mb-4">Un sédatif naturel d'exception</h2>
+      <p class="mb-6 font-light">La lavande contient des substances actives reconnues pour leurs propriétés relaxantes (linalol et acétate de linalyle). Lors du butinage, les abeilles concentrent ces précieux composés. Consommer une cuillère de miel de lavande dans une infusion tiède de camomille ou de verveine une demi-heure avant le coucher favorise l'endormissement et améliore la qualité du sommeil profond.</p>
+      <h2 class="font-display text-2xl font-bold text-stone-900 mt-8 mb-4">Un antiseptique et cicatrisant cutané</h2>
+      <p class="mb-6 font-light">Traditionnellement, le miel de lavande est également utilisé pour soigner les petites brûlures, blessures légères ou piqûres d'insectes. Ses propriétés antibactériennes naturelles empêchent la prolifération des germes tandis que sa texture riche protège la barrière cutanée et accélère la reconstruction cellulaire.</p>
+    `
+  },
+  'recette-pain-d-epices-moelleux-artisanal': {
+    title: "Recette : Le Pain d'Épices Moelleux à l'Ancienne",
+    excerpt: "Une recette traditionnelle inratable sublimée par notre Miel de Châtaignier d'Ardèche pour un goûter réconfortant.",
+    publishedAt: "2026-05-18T14:00:00.000Z",
+    contentHTML: `
+      <p class="text-lg leading-relaxed text-stone-600 mb-6 font-light">Le pain d'épices est le complice indissociable des après-midis d'automne et d'hiver. Aujourd'hui, nous vous partageons le secret de notre recette familiale, particulièrement moelleuse, qui fait la part belle à la puissance du miel de châtaignier.</p>
+      <h2 class="font-display text-2xl font-bold text-stone-900 mt-8 mb-4">Les Ingrédients (Pour un grand moule à cake)</h2>
+      <ul class="list-disc pl-6 mb-6 space-y-2 font-light text-stone-600">
+        <li>250g de <strong>Miel de Châtaignier d'Ardèche</strong></li>
+        <li>100g de farine de seigle</li>
+        <li>150g de farine de blé T65</li>
+        <li>10cl de lait entier</li>
+        <li>1 sachet de levure chimique</li>
+        <li>1 cuillère à café de cannelle en poudre</li>
+        <li>1 cuillère à café de gingembre en poudre</li>
+        <li>1/2 cuillère à café d'anis vert moulu</li>
+        <li>50g de beurre doux</li>
+      </ul>
+      <h2 class="font-display text-2xl font-bold text-stone-900 mt-8 mb-4">La Préparation</h2>
+      <p class="mb-4 font-light">1. Faites chauffer doucement le lait, le miel de châtaignier et le beurre dans une casserole afin que le tout soit parfaitement liquide.</p>
+      <p class="mb-4 font-light">2. Dans un grand saladier, mélangez les farines, la levure et l'ensemble des épices.</p>
+      <p class="mb-4 font-light">3. Versez le mélange chaud (lait/miel/beurre) sur les farines tout en fouettant énergiquement pour éviter les grumeaux.</p>
+      <p class="mb-4 font-light">4. Versez la pâte dans un moule à cake préalablement beurré et fariné.</p>
+      <p class="mb-6 font-light">5. Enfournez à 160°C pendant 45 à 50 minutes. Laissez refroidir complètement avant de trancher. Astuce : il est encore meilleur enveloppé dans un film étirable le lendemain !</p>
+    `
+  }
+};
+
+const activePost = post
+  ? {
+      title: post.title,
+      excerpt: post.excerpt,
+      publishedAt: post.publishedAt,
+      contentHTML: lexicalToHtml(post.content),
+    }
+  : (fallbackPosts[slug as keyof typeof fallbackPosts] || fallbackPosts['secrets-de-l-apiculture-biologique']);
+---
+
+<Layout title={activePost.title}>
+  
+  <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Lien retour -->
+    <a href="/recettes-bienfaits" class="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-amber-800 transition-colors mb-12">
+      <span>←</span> Tous les articles
+    </a>
+
+    <!-- Entête de l'article -->
+    <header class="space-y-6 mb-12">
+      <span class="text-xs text-amber-800 font-semibold uppercase tracking-wider bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200/40">
+        {activePost.publishedAt ? new Date(activePost.publishedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Actualité'}
+      </span>
+      <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 leading-[1.15]">
+        {activePost.title}
+      </h1>
+      <p class="text-xl text-stone-500 font-light leading-relaxed">
+        {activePost.excerpt}
+      </p>
+      <div class="border-t border-amber-900/5 pt-6 flex items-center gap-3">
+        <span class="text-2xl">🐝</span>
+        <div class="text-xs text-stone-400">
+          <span>Publié par </span>
+          <span class="font-semibold text-stone-600">L'Équipe de la Miellerie</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Visuel Couverture -->
+    <div class="h-[350px] sm:h-[450px] bg-amber-50 rounded-[32px] flex items-center justify-center text-7xl mb-12 border border-amber-100/50 shadow-sm select-none">
+      🍯🐝🌾
+    </div>
+
+    <!-- Corps de texte de l'article -->
+    <div class="prose prose-amber max-w-none prose-lg text-stone-850 leading-relaxed font-light">
+      {activePost.contentHTML ? (
+        <div set:html={activePost.contentHTML} />
+      ) : (
+        <p>Le contenu de cet article est en cours de chargement depuis le CMS.</p>
+      )}
+    </div>
+  </article>
+
+</Layout>

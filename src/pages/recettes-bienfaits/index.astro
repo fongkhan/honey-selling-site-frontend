@@ -1,0 +1,97 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { payload } from '../../lib/payload';
+
+// 1. Récupération des articles du CMS Payload
+const { docs: blogPosts } = await payload.posts().catch((err) => {
+  console.warn('[Astro Blog] Erreur fetch Payload CMS, utilisation des fallbacks.', err.message);
+  return { docs: [] };
+});
+
+const fallbackPosts = [
+  {
+    id: "post_1",
+    slug: "secrets-de-l-apiculture-biologique",
+    title: "Les Secrets de l'Apiculture Biologique",
+    excerpt: "Comment nos apiculteurs prennent soin des colonies tout au long de l'année pour garantir un miel 100% naturel et pur.",
+    publishedAt: "2026-05-10T10:00:00.000Z"
+  },
+  {
+    id: "post_2",
+    slug: "bienfaits-du-miel-de-lavande",
+    title: "Le Miel de Lavande : Un Trésor pour le Sommeil",
+    excerpt: "Découvrez comment les principes actifs des fleurs de lavande se retrouvent dans notre miel pour apaiser le corps et l'esprit.",
+    publishedAt: "2026-05-15T08:30:00.000Z"
+  },
+  {
+    id: "post_3",
+    slug: "recette-pain-d-epices-moelleux-artisanal",
+    title: "Recette : Le Pain d'Épices Moelleux à l'Ancienne",
+    excerpt: "Une recette traditionnelle inratable sublimée par notre Miel de Châtaignier d'Ardèche pour un goûter réconfortant.",
+    publishedAt: "2026-05-18T14:00:00.000Z"
+  }
+];
+
+const displayPosts = blogPosts && blogPosts.length > 0 ? blogPosts : fallbackPosts;
+---
+
+<Layout title="Blog, Recettes & Bienfaits du Miel — Miellerie Royale">
+  
+  <section class="relative py-16 px-4 bg-amber-50/20 border-b border-amber-900/5 overflow-hidden">
+    <div class="absolute bottom-0 left-0 w-80 h-80 bg-amber-100/30 rounded-full blur-3xl"></div>
+    <div class="max-w-7xl mx-auto text-center relative z-10 space-y-4">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100/60 rounded-full text-xs font-semibold text-amber-900 border border-amber-200/50">
+        🐝 Le Journal de la Ruche
+      </div>
+      <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 leading-tight">
+        Bienfaits & Recettes
+      </h1>
+      <p class="text-stone-500 max-w-xl mx-auto font-light leading-relaxed">
+        Plongez dans le monde fascinant des abeilles, découvrez les vertus santé de nos miels et nos suggestions de recettes gourmandes.
+      </p>
+    </div>
+  </section>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {displayPosts.map((post) => (
+        <article class="bg-white rounded-3xl border border-amber-900/5 overflow-hidden shadow-sm hover:shadow-xl hover:border-amber-500/20 transition-all duration-500 flex flex-col justify-between group">
+          <div>
+            <!-- Visuel illustratif -->
+            <div class="h-48 bg-amber-50 flex items-center justify-center text-5xl group-hover:scale-102 transition-transform duration-500 border-b border-amber-100 select-none">
+              🐝
+            </div>
+
+            <!-- Contenu texte -->
+            <div class="p-6 space-y-3">
+              <span class="text-xs text-stone-400 font-semibold uppercase tracking-wider block">
+                {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Actualité'}
+              </span>
+              
+              <a href={`/recettes-bienfaits/${post.slug}`} class="block">
+                <h3 class="font-display text-xl font-bold text-stone-900 leading-snug hover:text-amber-700 transition-colors line-clamp-2">
+                  {post.title}
+                </h3>
+              </a>
+              
+              <p class="text-xs text-stone-500 font-light leading-relaxed line-clamp-3">
+                {post.excerpt ?? 'Lire notre nouvel article édité avec soin.'}
+              </p>
+            </div>
+          </div>
+
+          <div class="p-6 pt-0 mt-auto">
+            <a 
+              href={`/recettes-bienfaits/${post.slug}`} 
+              class="text-xs font-semibold text-amber-700 hover:text-amber-950 transition-colors flex items-center gap-1 group-hover:translate-x-1 transition-transform duration-300"
+            >
+              <span>Lire l'article complet</span>
+              <span>→</span>
+            </a>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+
+</Layout>

@@ -1,188 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Importations Google Fonts de secours au cas où elles ne seraient pas préchargées */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
 :root {
-  --color-gold: #D4AF37;
-  --color-gold-light: #F9E596;
-  --color-gold-dark: #AA8B2C;
-  --color-dark: #121212;
-  --color-dark-alt: #1E1E1E;
-  --color-light: #FDFDFD;
-  --color-gray: #A0A0A0;
-  
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-serif: 'Playfair Display', serif;
-  
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 2rem;
-  --spacing-xl: 4rem;
-  
-  --radius: 12px;
-  --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
+/* Configuration de base */
 body {
-  font-family: var(--font-sans);
-  background-color: var(--color-dark);
-  color: var(--color-light);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
+  font-family: var(--font-body);
+  background-color: #fcfbf7; /* Fond beige crème doux "cire d'abeille" */
+  color: #1c1917; /* Écorce / Anthracite chaud */
+  overflow-x: hidden;
+  scroll-behavior: smooth;
 }
 
-h1, h2, h3, h4 {
-  font-family: var(--font-serif);
-  font-weight: 600;
-  color: var(--color-gold);
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-  transition: var(--transition);
+/* Animations et effets premium */
+@keyframes drip {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(12px) scale(0.95);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(24px) scale(0.85);
+    opacity: 0;
+  }
 }
 
-.hero {
+.honey-drip {
   position: relative;
-  min-height: 80vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  padding: var(--spacing-xl) var(--spacing-md);
 }
 
-.hero::before {
+.honey-drip::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(to bottom, rgba(18,18,18,0.3), var(--color-dark));
-  z-index: 1;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background-color: #fbbf24;
+  border-radius: 50%;
+  animation: drip 3s infinite cubic-bezier(0.5, 0, 0.75, 0.25);
 }
 
-.hero-img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.7;
+.glass-premium {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(251, 191, 36, 0.15);
 }
 
-.hero-content {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  max-width: 800px;
+.glass-dark {
+  background: rgba(28, 25, 23, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(251, 191, 36, 0.1);
 }
 
-.hero-title {
-  font-size: clamp(3rem, 8vw, 5rem);
-  margin-bottom: var(--spacing-md);
-  text-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  animation: fadeUp 1s ease-out;
+.honey-glow {
+  box-shadow: 0 0 40px rgba(245, 158, 11, 0.15);
 }
 
-.hero-subtitle {
-  font-size: clamp(1.1rem, 2vw, 1.5rem);
-  color: var(--color-light);
-  opacity: 0.9;
-  margin-bottom: var(--spacing-lg);
-  animation: fadeUp 1s ease-out 0.2s backwards;
+.honey-glow-hover:hover {
+  box-shadow: 0 0 50px rgba(245, 158, 11, 0.35);
+  transform: translateY(-4px);
 }
 
-.btn {
-  display: inline-block;
-  background-color: var(--color-gold);
-  color: var(--color-dark);
-  padding: 1rem 2rem;
-  border-radius: 30px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  border: none;
-  cursor: pointer;
-  animation: fadeUp 1s ease-out 0.4s backwards;
+/* Personnalisation de la barre de défilement */
+::-webkit-scrollbar {
+  width: 10px;
 }
 
-.btn:hover {
-  background-color: var(--color-gold-light);
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+::-webkit-scrollbar-track {
+  background: #fbfbf8;
 }
 
-.products-section {
-  padding: var(--spacing-xl) var(--spacing-md);
-  max-width: 1200px;
-  margin: 0 auto;
+::-webkit-scrollbar-thumb {
+  background: #f59e0b;
+  border-radius: 5px;
+  border: 2px solid #fbfbf8;
 }
 
-.section-title {
-  text-align: center;
-  font-size: 2.5rem;
-  margin-bottom: var(--spacing-xl);
-}
-
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
-}
-
-.product-card {
-  background: var(--color-dark-alt);
-  border: 1px solid rgba(212, 175, 55, 0.1);
-  border-radius: var(--radius);
-  padding: var(--spacing-lg);
-  text-align: center;
-  transition: var(--transition);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 250px;
-}
-
-.product-card:hover {
-  transform: translateY(-10px);
-  border-color: var(--color-gold);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-.product-title {
-  font-size: 1.5rem;
-  margin-bottom: var(--spacing-md);
-  color: var(--color-light);
-}
-
-.product-link {
-  display: inline-block;
-  margin-top: auto;
-  padding: 0.5rem 1.5rem;
-  border: 1px solid var(--color-gold);
-  border-radius: 20px;
-  color: var(--color-gold);
-  font-weight: 500;
-}
-
-.product-card:hover .product-link {
-  background: var(--color-gold);
-  color: var(--color-dark);
-}
-
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+::-webkit-scrollbar-thumb:hover {
+  background: #d97706;
 }

@@ -1,0 +1,245 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { payload } from '../lib/payload';
+
+// Récupération de la page d'histoire depuis Payload CMS
+const histoirePageRes = await payload.page('histoire').catch((err) => {
+  console.warn('[Astro Histoire] Erreur fetch Payload page histoire, utilisation du fallback statique.', err.message);
+  return null;
+});
+
+const histoirePage = histoirePageRes?.docs?.[0] ?? null;
+const pageTitle = histoirePage?.seo?.title ?? "Notre Histoire & Nos Engagements Apicoles";
+---
+
+<Layout title={pageTitle}>
+  
+  {histoirePage && histoirePage.layout && histoirePage.layout.length > 0 ? (
+    <div class="space-y-10 pb-20">
+      {histoirePage.layout.map((block) => {
+        switch (block.blockType) {
+          case 'hero':
+            return (
+              <section class="relative py-24 px-4 bg-amber-50/20 border-b border-amber-900/5 overflow-hidden">
+                <div class="absolute inset-0 z-0">
+                  <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-amber-200/20 rounded-full blur-[100px]" />
+                </div>
+                <div class="max-w-4xl mx-auto text-center relative z-10 space-y-6">
+                  {block.badge && (
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100/60 rounded-full text-xs font-semibold text-amber-900 border border-amber-200/50">
+                      {block.badge}
+                    </div>
+                  )}
+                  <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 leading-tight">
+                    {block.title}{' '}
+                    {block.titleColored && (
+                      <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-amber-700">
+                        {block.titleColored}
+                      </span>
+                    )}
+                  </h1>
+                  {block.subtitle && (
+                    <p class="text-lg sm:text-xl text-stone-600 max-w-2xl mx-auto font-light leading-relaxed">
+                      {block.subtitle}
+                    </p>
+                  )}
+                </div>
+              </section>
+            );
+
+          case 'pageHeader':
+            return (
+              <section class="relative py-24 px-4 bg-amber-50/20 border-b border-amber-900/5 overflow-hidden">
+                <div class="absolute inset-0 z-0">
+                  <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-amber-200/20 rounded-full blur-[100px]" />
+                </div>
+                <div class="max-w-4xl mx-auto text-center relative z-10 space-y-6">
+                  {block.badge && (
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100/60 rounded-full text-xs font-semibold text-amber-900 border border-amber-200/50">
+                      {block.badge}
+                    </div>
+                  )}
+                  <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 leading-tight">
+                    {block.title}
+                  </h1>
+                  {block.description && (
+                    <p class="text-lg sm:text-xl text-stone-600 max-w-2xl mx-auto font-light leading-relaxed">
+                      {block.description}
+                    </p>
+                  )}
+                </div>
+              </section>
+            );
+
+          case 'story':
+            return (
+              <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                  <div class="md:col-span-7 space-y-4">
+                    <h2 class="font-display text-3xl font-bold text-stone-900">
+                      {block.title}
+                    </h2>
+                    {block.paragraphs?.map((p) => (
+                      <p class="text-stone-600 leading-relaxed font-light mb-4">
+                        {p.text}
+                      </p>
+                    ))}
+                  </div>
+                  <div class="md:col-span-5 h-72 bg-amber-50 border border-amber-200 rounded-3xl flex items-center justify-center text-7xl select-none shadow-sm rotate-1">
+                    {block.emojis ?? '👵👴🍯'}
+                  </div>
+                </div>
+              </section>
+            );
+
+          case 'engagements':
+            return (
+              <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                <div class="bg-amber-50/30 p-8 sm:p-12 rounded-[32px] border border-amber-900/5 space-y-8">
+                  <div class="text-center max-w-2xl mx-auto space-y-3">
+                    {block.badge && <span class="text-4xl">{block.badge}</span>}
+                    <h2 class="font-display text-3xl font-bold text-stone-900">
+                      {block.title}
+                    </h2>
+                    {block.subtitle && (
+                      <p class="text-stone-500 font-light text-sm">{block.subtitle}</p>
+                    )}
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
+                    {block.items?.map((item) => (
+                      <div class="bg-white p-6 rounded-2xl border border-amber-900/5 shadow-xs space-y-2">
+                        <h4 class="font-display font-semibold text-stone-900 text-lg flex items-center gap-2">
+                          {item.emoji && <span>{item.emoji}</span>}
+                          {item.title}
+                        </h4>
+                        <p class="text-xs text-stone-500 leading-relaxed font-light">
+                          {item.description}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            );
+
+          case 'quote':
+            return (
+              <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                <div class="text-center max-w-2xl mx-auto space-y-4 pt-6">
+                  <p class="font-display italic text-2xl text-amber-900/90 leading-relaxed">
+                    {block.quote}
+                  </p>
+                  {block.author && (
+                    <div class="text-xs text-stone-400 font-semibold uppercase tracking-widest">
+                      — {block.author}
+                    </div>
+                  )}
+                </div>
+              </section>
+            );
+
+          default:
+            return null;
+        }
+      })}
+    </div>
+  ) : (
+    <!-- STATIC FALLBACK VERSION -->
+    <div>
+      <!-- ENTÊTE HISTOIRE -->
+      <section class="relative py-24 px-4 bg-amber-50/20 border-b border-amber-900/5 overflow-hidden">
+        <div class="absolute inset-0 z-0">
+          <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-amber-200/20 rounded-full blur-[100px]" />
+        </div>
+        <div class="max-w-4xl mx-auto text-center relative z-10 space-y-6">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100/60 rounded-full text-xs font-semibold text-amber-900 border border-amber-200/50">
+            👑 L'amour du travail bien fait
+          </div>
+          <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 leading-tight">
+            L'Histoire de notre Passion Apicole
+          </h1>
+          <p class="text-lg sm:text-xl text-stone-600 max-w-2xl mx-auto font-light leading-relaxed">
+            Depuis trois générations, la famille apicole Royale veille sur ses ruches et partage les trésors des terroirs sauvages de France dans le respect absolu de la nature.
+          </p>
+        </div>
+      </section>
+
+      <!-- CONTENU PRINCIPAL HISTOIRE -->
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 space-y-16">
+        
+        <!-- Notre Origine -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          <div class="md:col-span-7 space-y-4">
+            <h2 class="font-display text-3xl font-bold text-stone-900">Une histoire de famille</h2>
+            <p class="text-stone-600 leading-relaxed font-light">
+              Tout a commencé en 1954 dans les collines parfumées de Haute-Provence. Notre grand-père, Émile, passionné par la vie fascinante des abeilles, installa ses dix premières ruches de bois au milieu des champs de lavande sauvage.
+            </p>
+            <p class="text-stone-600 leading-relaxed font-light">
+              Aujourd'hui, nous perpétuons ce savoir-faire familial unique. Nous cultivons le goût des miels typés, purs et bruts, tels que l'abeille les produit au sein de l'alvéole de cire.
+            </p>
+          </div>
+          <div class="md:col-span-5 h-72 bg-amber-50 border border-amber-200 rounded-3xl flex items-center justify-center text-7xl select-none shadow-sm rotate-1">
+            👵👴🍯
+          </div>
+        </div>
+
+        <!-- Nos Engagements Écologiques -->
+        <div class="bg-amber-50/30 p-8 sm:p-12 rounded-[32px] border border-amber-900/5 space-y-8">
+          <div class="text-center max-w-2xl mx-auto space-y-3">
+            <span class="text-4xl">🐝🌿🌱</span>
+            <h2 class="font-display text-3xl font-bold text-stone-900">Nos engagements pour l'avenir</h2>
+            <p class="text-stone-500 font-light text-sm">Protéger l'abeille, c'est préserver le vivant et la biodiversité de nos campagnes.</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
+            <div class="bg-white p-6 rounded-2xl border border-amber-900/5 shadow-xs space-y-2">
+              <h4 class="font-display font-semibold text-stone-900 text-lg flex items-center gap-2">
+                <span>🛡️</span> Protection des abeilles
+              </h4>
+              <p class="text-xs text-stone-500 leading-relaxed font-light">
+                Zéro pesticide chimique de synthèse dans nos ruchers. Nous luttons naturellement pour la santé des colonies et maintenons les prédateurs à distance de manière biologique.
+              </p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-amber-900/5 shadow-xs space-y-2">
+              <h4 class="font-display font-semibold text-stone-900 text-lg flex items-center gap-2">
+                <span>🌸</span> Préservation de la flore
+              </h4>
+              <p class="text-xs text-stone-500 leading-relaxed font-light">
+                Nos ruches sédentaires et de transhumance sont posées uniquement dans des zones sauvages et préservées, favorisant la pollinisation active des écosystèmes.
+              </p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-amber-900/5 shadow-xs space-y-2">
+              <h4 class="font-display font-semibold text-stone-900 text-lg flex items-center gap-2">
+                <span>📦</span> Emballages Éco-conçus
+              </h4>
+              <p class="text-xs text-stone-500 leading-relaxed font-light">
+                Pots en verre 100% recyclables, étiquettes imprimées avec des encres végétales sur papier recyclé et expéditions sans plastique.
+              </p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-amber-900/5 shadow-xs space-y-2">
+              <h4 class="font-display font-semibold text-stone-900 text-lg flex items-center gap-2">
+                <span>🔬</span> Analyse & Pureté
+              </h4>
+              <p class="text-xs text-stone-500 leading-relaxed font-light">
+                Chaque lot de miel récolté est analysé en laboratoire indépendant pour garantir son absence totale de résidus chimiques et attester de sa pureté florale unique.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Citation Apiculteur -->
+        <div class="text-center max-w-2xl mx-auto space-y-4 pt-6">
+          <p class="font-display italic text-2xl text-amber-900/90 leading-relaxed">
+            "Le miel est le reflet poétique et gustatif du paysage à un instant précis de l'année. Notre rôle d'apiculteur est simplement de ne pas perturber cette magie."
+          </p>
+          <div class="text-xs text-stone-400 font-semibold uppercase tracking-widest">— Marie Royale, Apicultrice en chef</div>
+        </div>
+
+      </div>
+    </div>
+  )}
+
+</Layout>

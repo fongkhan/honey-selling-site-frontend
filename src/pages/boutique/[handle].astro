@@ -1,0 +1,255 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { medusa } from '../../lib/medusa';
+import { payload } from '../../lib/payload';
+
+// 1. Définition des chemins statiques pour le mode SSG
+export async function getStaticPaths() {
+  const { products } = await medusa.products().catch(() => ({ products: [] }));
+  
+  const fallbackHandles = ['miel-de-lavande', 'miel-de-chataignier', 'miel-d-acacia', 'miel-de-sapin'];
+  const handles = products.length > 0 ? products.map((p) => p.handle) : fallbackHandles;
+  
+  return handles.map((handle) => ({
+    params: { handle },
+  }));
+}
+
+const { handle } = Astro.params;
+
+// 2. Fetch du produit Medusa
+const { products } = await medusa.product(handle).catch(() => ({ products: [] }));
+const product = products?.[0];
+
+// 3. Fetch des métadonnées du CMS Payload
+const { docs: metaDocs } = await payload.productMetadata(handle).catch(() => ({ docs: [] }));
+const metadata = metaDocs?.[0];
+
+// Fallbacks de secours en cas d'absence de données Medusa / CMS en local
+const fallbackProduct = {
+  title: handle === 'miel-de-lavande' ? "Miel de Lavande de Provence" : 
+         handle === 'miel-de-chataignier' ? "Miel de Châtaignier d'Ardèche" :
+         handle === 'miel-d-acacia' ? "Miel d'Acacia du Jura" : "Miel de Sapin des Vosges",
+  subtitle: handle === 'miel-de-lavande' ? "Doux, fleuri, notes de vanille" : 
+            handle === 'miel-de-chataignier' ? "Robuste, boisé, amertume subtile" :
+            handle === 'miel-d-acacia' ? "Liquide, très doux, délicat" : "Malté, résineux, arômes des bois",
+  description: "Un miel d'exception, brut et sauvage, récolté et conditionné directement sur place par nos apiculteurs.",
+  variants: [
+    { id: "var_250", title: "Pot de 250g", calculated_price: { calculated_amount: 790, currency_code: "eur" } },
+    { id: "var_500", title: "Pot de 500g", calculated_price: { calculated_amount: 1350, currency_code: "eur" } }
+  ]
+};
+
+const displayProduct = product || fallbackProduct;
+
+const fallbackMetadata = {
+  origin: handle === 'miel-de-lavande' ? "Plateau de Valensole, Provence" :
+          handle === 'miel-de-chataignier' ? "Parc Naturel d'Ardèche" :
+          handle === 'miel-d-acacia' ? "Forêts du Jura" : "Forêts de Sapins, Vosges",
+  tasteProfile: displayProduct.subtitle,
+  harvestPeriod: "Juillet",
+  honeyColor: handle === 'miel-de-lavande' ? "Ambré très clair, devenant blanc crémeux" :
+              handle === 'miel-de-chataignier' ? "Ambré sombre et profond" :
+              handle === 'miel-d-acacia' ? "Cristallin, jaune d'or très pâle" : "Brun très foncé, reflets verts",
+  intensity: handle === 'miel-de-lavande' ? 2 :
+             handle === 'miel-de-chataignier' ? 5 :
+             handle === 'miel-d-acacia' ? 1 : 4,
+  benefits: handle === 'miel-de-lavande' ? "Apaisant, idéal contre les insomnies et pour détendre les cordes vocales." :
+            handle === 'miel-de-chataignier' ? "Riche en oligo-éléments, stimule la circulation et combat la fatigue." :
+            handle === 'miel-d-acacia' ? "Très digeste, régule le transit et convient parfaitement aux jeunes enfants." : "Antiseptique pulmonaire et excellent fortifiant général.",
+  craftStory: null,
+  recipes: null
+};
+
+const displayMeta = metadata || fallbackMetadata;
+
+// Prix formaté par défaut pour la première variante
+const defaultVariant = displayProduct.variants[0];
+const defaultPrice = (defaultVariant?.calculated_price?.calculated_amount ?? 750) / 100;
+const defaultCurrency = defaultVariant?.calculated_price?.currency_code?.toUpperCase() ?? 'EUR';
+const formattedDefaultPrice = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: defaultCurrency }).format(defaultPrice);
+---
+
+<Layout title={`${displayProduct.title} — Miel Biologique`}>
+  
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Lien de retour -->
+    <a href="/boutique" class="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-amber-800 transition-colors mb-12">
+      <span>←</span> Retourner à la boutique
+    </a>
+
+    <!-- PRESENTATION PRODUIT -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+      <!-- Visuel Pot & Métadonnées visuelles (Gauche) -->
+      <div class="lg:col-span-6 space-y-6">
+        <div class="bg-gradient-to-b from-amber-50 to-amber-100/50 rounded-[32px] border border-amber-900/5 p-8 flex items-center justify-center text-[10rem] h-[450px] shadow-sm relative overflow-hidden">
+          <div class="absolute top-4 left-4 px-3 py-1 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-full uppercase tracking-wider">Bio</div>
+          <span class="honey-glow transition-transform duration-500 hover:scale-110 select-none">🍯</span>
+        </div>
+
+        <!-- Fiche technique CMS (Carrousel ou Liste) -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-white p-5 rounded-2xl border border-amber-900/5 shadow-xs">
+            <span class="text-xs text-stone-400 font-semibold uppercase tracking-wider block mb-1">Origine</span>
+            <span class="font-display font-medium text-stone-900 text-sm">{displayMeta.origin}</span>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-amber-900/5 shadow-xs">
+            <span class="text-xs text-stone-400 font-semibold uppercase tracking-wider block mb-1">Période de Récolte</span>
+            <span class="font-display font-medium text-stone-900 text-sm">{displayMeta.harvestPeriod}</span>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-amber-900/5 shadow-xs">
+            <span class="text-xs text-stone-400 font-semibold uppercase tracking-wider block mb-1">Aspect & Couleur</span>
+            <span class="font-display font-medium text-stone-900 text-sm">{displayMeta.honeyColor}</span>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-amber-900/5 shadow-xs">
+            <span class="text-xs text-stone-400 font-semibold uppercase tracking-wider block mb-1">Intensité</span>
+            <div class="flex items-center gap-1 mt-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span class={`text-sm ${i < (displayMeta.intensity ?? 3) ? 'text-amber-500' : 'text-stone-200'}`}>🐝</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description, Formats & Achat (Droite) -->
+      <div class="lg:col-span-6 space-y-8 lg:pl-6">
+        <div class="space-y-4">
+          <h1 class="font-display text-4xl sm:text-5xl font-bold text-stone-900">{displayProduct.title}</h1>
+          <p class="text-lg font-semibold text-amber-800 uppercase tracking-wider">{displayProduct.subtitle}</p>
+          <div class="border-t border-amber-900/5 pt-4 flex items-center justify-between">
+            <span class="text-3xl font-bold text-amber-950 font-display" id="product-price">{formattedDefaultPrice}</span>
+            <span class="text-xs text-emerald-800 font-semibold bg-emerald-50 px-2.5 py-1 rounded-full">En stock</span>
+          </div>
+        </div>
+
+        <p class="text-stone-600 leading-relaxed font-light">{displayProduct.description}</p>
+
+        <!-- FORMATS / VARIANTES -->
+        <div class="space-y-4 pt-6 border-t border-amber-900/5">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-stone-400">Sélectionner le format</h3>
+          <div class="flex flex-wrap gap-3">
+            {displayProduct.variants.map((v, i) => {
+              const vPrice = (v.calculated_price?.calculated_amount ?? 750) / 100;
+              const formattedVPrice = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: defaultCurrency }).format(vPrice);
+              return (
+                <button
+                  class={`variant-select-btn px-6 py-4 rounded-2xl border text-left transition-all duration-300 flex flex-col min-w-[140px] cursor-pointer hover:border-amber-500/40 ${i === 0 ? 'border-amber-500 bg-amber-50/40 shadow-xs ring-1 ring-amber-500/20' : 'border-stone-200 bg-white'}`}
+                  data-variant-id={v.id}
+                  data-price={formattedVPrice}
+                >
+                  <span class="text-sm font-semibold text-stone-900">{v.title}</span>
+                  <span class="text-xs text-amber-800 font-medium mt-1">{formattedVPrice}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <!-- AJOUT AU PANIER ACTION -->
+        <div class="flex items-center gap-4 pt-6">
+          <div class="flex items-center border border-stone-200 rounded-2xl bg-white overflow-hidden h-14">
+            <button id="qty-minus" class="px-4 py-2 hover:bg-amber-100/50 text-stone-600 font-bold transition-colors">-</button>
+            <span id="qty-display" class="px-6 font-semibold text-stone-800 select-none text-sm">1</span>
+            <button id="qty-plus" class="px-4 py-2 hover:bg-amber-100/50 text-stone-600 font-bold transition-colors">+</button>
+          </div>
+
+          <button
+            id="add-to-cart-action-btn"
+            class="flex-grow h-14 bg-amber-600 hover:bg-amber-500 text-stone-900 rounded-2xl font-bold text-center transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2 hover:scale-[1.01]"
+            data-active-variant-id={defaultVariant?.id}
+          >
+            <span>Ajouter au panier</span>
+            <span>🛒</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RICH SECTIONS (CMS CONTENT) -->
+    <div class="mt-24 pt-16 border-t border-amber-900/5 grid grid-cols-1 md:grid-cols-2 gap-16">
+      <!-- Section Bienfaits -->
+      <div class="space-y-6 bg-amber-50/20 p-8 rounded-3xl border border-amber-900/5">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🌿</span>
+          <h3 class="font-display text-2xl font-bold text-stone-900">Bienfaits & Vertus</h3>
+        </div>
+        <p class="text-stone-600 leading-relaxed font-light text-sm md:text-base">
+          {displayMeta.benefits}
+        </p>
+      </div>
+
+      <!-- Section Recettes et Accords -->
+      <div class="space-y-6">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🍽️</span>
+          <h3 class="font-display text-2xl font-bold text-stone-900">Accords & Suggestions</h3>
+        </div>
+        <div class="text-stone-600 leading-relaxed font-light text-sm prose prose-amber">
+          {displayMeta.recipes ? (
+            <div set:html={displayMeta.recipes} />
+          ) : (
+            <p>Délicieux simplement sur une tartine de pain au levain tiède, avec un fromage de chèvre frais ou pour adoucir une tisane de tilleul en fin de soirée.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</Layout>
+
+<script>
+  let selectedVariantId = document.getElementById('add-to-cart-action-btn')?.dataset.activeVariantId || '';
+  let quantity = 1;
+
+  const priceText = document.getElementById('product-price');
+  const qtyDisplay = document.getElementById('qty-display');
+  const addToCartBtn: any = document.getElementById('add-to-cart-action-btn');
+
+  // Sélecteur de variante (Format)
+  document.querySelectorAll('.variant-select-btn').forEach((btn: any) => {
+    btn.addEventListener('click', () => {
+      // Retirer le style actif
+      document.querySelectorAll('.variant-select-btn').forEach((b: any) => {
+        b.classList.remove('border-amber-500', 'bg-amber-50/40', 'shadow-xs', 'ring-1', 'ring-amber-500/20');
+        b.classList.add('border-stone-200', 'bg-white');
+      });
+
+      // Ajouter le style actif
+      btn.classList.add('border-amber-500', 'bg-amber-50/40', 'shadow-xs', 'ring-1', 'ring-amber-500/20');
+      btn.classList.remove('border-stone-200', 'bg-white');
+
+      // Mettre à jour les variables
+      selectedVariantId = btn.dataset.variantId;
+      if (priceText) priceText.innerText = btn.dataset.price;
+      if (addToCartBtn) addToCartBtn.dataset.activeVariantId = selectedVariantId;
+    });
+  });
+
+  // Gestion Quantité
+  document.getElementById('qty-minus')?.addEventListener('click', () => {
+    if (quantity > 1) {
+      quantity--;
+      if (qtyDisplay) qtyDisplay.innerText = quantity.toString();
+    }
+  });
+
+  document.getElementById('qty-plus')?.addEventListener('click', () => {
+    quantity++;
+    if (qtyDisplay) qtyDisplay.innerText = quantity.toString();
+  });
+
+  // Déclencher mise au panier
+  addToCartBtn?.addEventListener('click', () => {
+    if (!selectedVariantId) return;
+
+    window.dispatchEvent(
+      new CustomEvent('add-to-cart', {
+        detail: {
+          variantId: selectedVariantId,
+          quantity: quantity
+        }
+      })
+    );
+  });
+</script>
