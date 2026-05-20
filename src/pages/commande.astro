@@ -25,12 +25,26 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
 
     <!-- Message de panier vide (Masqué par défaut) -->
     <div id="checkout-empty-state" class="hidden flex-col items-center justify-center py-20 text-center space-y-6 max-w-md mx-auto bg-white border border-amber-900/5 p-8 rounded-3xl shadow-sm">
-      <span class="text-6xl animate-bounce">🐝</span>
+      <span class="text-6xl animate-bounce" aria-hidden="true">🐝</span>
       <h2 class="font-display text-2xl font-bold text-amber-950">Votre panier est vide</h2>
       <p class="text-stone-500 text-sm">Vous devez ajouter des miels d'exception dans votre panier avant de pouvoir passer une commande.</p>
-      <a href="/boutique" class="inline-block px-8 py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors shadow-md hover:shadow-lg">
+      <a href="/boutique" class="inline-block px-8 py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors shadow-md hover:shadow-lg focus-visible:ring-2 focus-visible:ring-amber-500 focus:outline-none">
         Retourner à la boutique
       </a>
+    </div>
+
+    <!-- Message Hors ligne / Panne Serveur (Masqué par défaut) -->
+    <div id="checkout-offline-state" class="hidden flex-col items-center justify-center py-20 text-center space-y-6 max-w-md mx-auto bg-white border border-amber-900/5 p-8 rounded-3xl shadow-sm" role="alert" aria-live="assertive">
+      <span class="text-6xl animate-pulse" aria-hidden="true">🐝🔌</span>
+      <h2 class="font-display text-2xl font-bold text-amber-950">La ruche est inaccessible</h2>
+      <p class="text-stone-500 text-sm">Nous ne parvenons pas à contacter notre miellerie pour charger votre panier. Veuillez vérifier votre connexion internet et réessayer.</p>
+      <button 
+        id="retry-checkout-btn" 
+        type="button" 
+        class="px-8 py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors shadow-md hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+      >
+        Réessayer de charger
+      </button>
     </div>
 
     <!-- Conteneur Principal du Checkout (Masqué pendant le chargement) -->
@@ -40,16 +54,16 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
       <div class="lg:col-span-7 space-y-6">
         
         <!-- ÉTAPE 1 : COORDONNÉES DE CONTACT -->
-        <div class="bg-white border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm transition-all duration-300 relative overflow-hidden" id="step-1-card">
+        <div class="bg-white border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm transition-all duration-300 relative overflow-hidden" id="step-1-card" aria-labelledby="step-1-title" role="region">
           <!-- Indicateur d'étape -->
           <div class="absolute top-0 right-0 h-2 w-full bg-amber-100/50" id="step-1-progress-bar"></div>
           
           <div class="flex items-start justify-between mb-6">
             <div class="flex items-center gap-4">
-              <span class="h-8 w-8 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-sm">1</span>
-              <h3 class="font-display text-xl font-bold text-amber-950">Informations de contact</h3>
+              <span class="h-8 w-8 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-sm" aria-hidden="true">1</span>
+              <h3 id="step-1-title" class="font-display text-xl font-bold text-amber-950">Informations de contact</h3>
             </div>
-            <button id="edit-step-1-btn" class="hidden text-xs font-semibold text-amber-700 hover:text-amber-900 underline transition-colors">Modifier</button>
+            <button id="edit-step-1-btn" type="button" class="hidden text-xs font-semibold text-amber-700 hover:text-amber-900 underline transition-colors focus-visible:ring-2 focus-visible:ring-amber-500 focus:outline-none" aria-label="Modifier l'adresse email de contact">Modifier</button>
           </div>
 
           <!-- Formulaire de contact -->
@@ -60,17 +74,30 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
                 type="email" 
                 id="contact-email" 
                 placeholder="jean.dupont@exemple.com" 
-                class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-amber-500 transition-all text-sm font-medium"
                 required
+                autocomplete="email"
+                aria-required="true"
+                aria-describedby="contact-email-desc"
               />
-              <p class="text-[11px] text-stone-400 mt-1.5">Pour le suivi de votre livraison de miel et l'envoi de votre reçu.</p>
+              <p id="contact-email-desc" class="text-[11px] text-stone-400 mt-1.5">Pour le suivi de votre livraison de miel et l'envoi de votre reçu.</p>
             </div>
+
+            <!-- Panneau d'erreur d'étape 1 (Masqué par défaut) -->
+            <div id="step-1-error-panel" class="hidden p-4 bg-red-50 border border-red-200 text-red-800 rounded-2xl text-xs sm:text-sm font-medium flex items-start gap-2.5 mt-2 animate-fade-in" role="alert" aria-live="assertive">
+              <span class="text-base" aria-hidden="true">⚠️</span>
+              <div class="flex-grow">
+                <p id="step-1-error-text">Veuillez entrer une adresse email valide.</p>
+              </div>
+            </div>
+
             <button 
               id="submit-step-1-btn"
-              class="w-full sm:w-auto px-6 py-2.5 sm:px-8 sm:py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors text-sm shadow-sm flex items-center justify-center gap-2"
+              type="button"
+              class="w-full sm:w-auto px-6 py-2.5 sm:px-8 sm:py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors text-sm shadow-sm flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus:outline-none"
             >
               <span class="whitespace-nowrap">Continuer vers la livraison</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -83,15 +110,15 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
         </div>
 
         <!-- ÉTAPE 2 : ADRESSE DE LIVRAISON -->
-        <div class="bg-white border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm transition-all duration-300 opacity-50 pointer-events-none relative overflow-hidden" id="step-2-card">
+        <div class="bg-white border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm transition-all duration-300 opacity-50 pointer-events-none relative overflow-hidden" id="step-2-card" aria-labelledby="step-2-title" role="region" aria-disabled="true">
           <div class="absolute top-0 right-0 h-2 w-full bg-stone-100" id="step-2-progress-bar"></div>
           
           <div class="flex items-start justify-between mb-6">
             <div class="flex items-center gap-4">
-              <span class="h-8 w-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center font-bold text-sm" id="step-2-num">2</span>
+              <span class="h-8 w-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center font-bold text-sm" id="step-2-num" aria-hidden="true">2</span>
               <h3 class="font-display text-xl font-bold text-stone-400 transition-colors" id="step-2-title">Adresse de livraison</h3>
             </div>
-            <button id="edit-step-2-btn" class="hidden text-xs font-semibold text-amber-700 hover:text-amber-900 underline transition-colors">Modifier</button>
+            <button id="edit-step-2-btn" type="button" class="hidden text-xs font-semibold text-amber-700 hover:text-amber-900 underline transition-colors focus-visible:ring-2 focus-visible:ring-amber-500 focus:outline-none" aria-label="Modifier l'adresse de livraison">Modifier</button>
           </div>
 
           <!-- Formulaire d'adresse -->
@@ -103,8 +130,10 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
                   type="text" 
                   id="shipping-first-name" 
                   placeholder="Jean" 
-                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-amber-500 transition-all text-sm font-medium"
                   required
+                  autocomplete="given-name"
+                  aria-required="true"
                 />
               </div>
               <div>
@@ -113,8 +142,10 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
                   type="text" 
                   id="shipping-last-name" 
                   placeholder="Dupont" 
-                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-amber-500 transition-all text-sm font-medium"
                   required
+                  autocomplete="family-name"
+                  aria-required="true"
                 />
               </div>
             </div>
@@ -125,8 +156,10 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
                 type="text" 
                 id="shipping-address" 
                 placeholder="12 rue de la Paix" 
-                class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-amber-500 transition-all text-sm font-medium"
                 required
+                autocomplete="street-address"
+                aria-required="true"
               />
             </div>
 
@@ -137,8 +170,10 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
                   type="text" 
                   id="shipping-postal-code" 
                   placeholder="75002" 
-                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-amber-500 transition-all text-sm font-medium"
                   required
+                  autocomplete="postal-code"
+                  aria-required="true"
                 />
               </div>
               <div class="sm:col-span-2">
@@ -147,8 +182,10 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
                   type="text" 
                   id="shipping-city" 
                   placeholder="Paris" 
-                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-amber-500 transition-all text-sm font-medium"
                   required
+                  autocomplete="address-level2"
+                  aria-required="true"
                 />
               </div>
             </div>
@@ -160,8 +197,10 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
                   type="tel" 
                   id="shipping-phone" 
                   placeholder="06 12 34 56 78" 
-                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white transition-all text-sm font-medium"
+                  class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-amber-500 transition-all text-sm font-medium"
                   required
+                  autocomplete="tel"
+                  aria-required="true"
                 />
               </div>
               <div>
@@ -176,12 +215,21 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
               </div>
             </div>
 
+            <!-- Panneau d'erreur d'étape 2 (Masqué par défaut) -->
+            <div id="step-2-error-panel" class="hidden p-4 bg-red-50 border border-red-200 text-red-800 rounded-2xl text-xs sm:text-sm font-medium flex items-start gap-2.5 mt-2 animate-fade-in" role="alert" aria-live="assertive">
+              <span class="text-base" aria-hidden="true">⚠️</span>
+              <div class="flex-grow">
+                <p id="step-2-error-text">Une erreur de connexion est survenue. Impossible d'enregistrer votre adresse. Veuillez réessayer.</p>
+              </div>
+            </div>
+
             <button 
               id="submit-step-2-btn"
-              class="w-full sm:w-auto px-6 py-2.5 sm:px-8 sm:py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors text-sm shadow-sm flex items-center justify-center gap-2 mt-2"
+              type="button"
+              class="w-full sm:w-auto px-6 py-2.5 sm:px-8 sm:py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors text-sm shadow-sm flex items-center justify-center gap-2 mt-2 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus:outline-none"
             >
               <span class="whitespace-nowrap">Continuer vers le mode de livraison</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -197,33 +245,42 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
         </div>
 
         <!-- ÉTAPE 3 : MODE DE LIVRAISON -->
-        <div class="bg-white border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm transition-all duration-300 opacity-50 pointer-events-none relative overflow-hidden" id="step-3-card">
+        <div class="bg-white border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm transition-all duration-300 opacity-50 pointer-events-none relative overflow-hidden" id="step-3-card" aria-labelledby="step-3-title" role="region" aria-disabled="true">
           <div class="absolute top-0 right-0 h-2 w-full bg-stone-100" id="step-3-progress-bar"></div>
           
           <div class="flex items-start justify-between mb-6">
             <div class="flex items-center gap-4">
-              <span class="h-8 w-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center font-bold text-sm" id="step-3-num">3</span>
+              <span class="h-8 w-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center font-bold text-sm" id="step-3-num" aria-hidden="true">3</span>
               <h3 class="font-display text-xl font-bold text-stone-400 transition-colors" id="step-3-title">Mode de livraison</h3>
             </div>
-            <button id="edit-step-3-btn" class="hidden text-xs font-semibold text-amber-700 hover:text-amber-900 underline transition-colors">Modifier</button>
+            <button id="edit-step-3-btn" type="button" class="hidden text-xs font-semibold text-amber-700 hover:text-amber-900 underline transition-colors focus-visible:ring-2 focus-visible:ring-amber-500 focus:outline-none" aria-label="Modifier le mode de livraison choisi">Modifier</button>
           </div>
 
           <!-- Options de livraison dynamiques -->
           <div id="step-3-form-container" class="hidden space-y-4">
             
-            <div id="shipping-options-list" class="space-y-3">
+            <div id="shipping-options-list" class="space-y-3" role="radiogroup" aria-labelledby="step-3-title">
               <!-- Injecté en JS -->
               <div class="animate-pulse space-y-2">
-                <div class="h-14 bg-stone-100 rounded-xl"></div>
+                <div class="h-14 bg-stone-100 rounded-xl" aria-hidden="true"></div>
+              </div>
+            </div>
+
+            <!-- Panneau d'erreur d'étape 3 (Masqué par défaut) -->
+            <div id="step-3-error-panel" class="hidden p-4 bg-red-50 border border-red-200 text-red-800 rounded-2xl text-xs sm:text-sm font-medium flex items-start gap-2.5 mt-2 animate-fade-in" role="alert" aria-live="assertive">
+              <span class="text-base" aria-hidden="true">⚠️</span>
+              <div class="flex-grow">
+                <p id="step-3-error-text">Impossible d'enregistrer le mode de livraison choisi. Veuillez vérifier votre connexion réseau.</p>
               </div>
             </div>
 
             <button 
               id="submit-step-3-btn"
-              class="w-full sm:w-auto px-6 py-2.5 sm:px-8 sm:py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors text-sm shadow-sm flex items-center justify-center gap-2 mt-2"
+              type="button"
+              class="w-full sm:w-auto px-6 py-2.5 sm:px-8 sm:py-3 bg-amber-600 hover:bg-amber-500 text-stone-900 font-bold rounded-full transition-colors text-sm shadow-sm flex items-center justify-center gap-2 mt-2 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus:outline-none"
             >
               <span class="whitespace-nowrap">Continuer vers le paiement</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -236,11 +293,11 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
         </div>
 
         <!-- ÉTAPE 4 : PAIEMENT SÉCURISÉ & VALIDATION -->
-        <div class="bg-white border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm transition-all duration-300 opacity-50 pointer-events-none relative overflow-hidden" id="step-4-card">
+        <div class="bg-white border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm transition-all duration-300 opacity-50 pointer-events-none relative overflow-hidden" id="step-4-card" aria-labelledby="step-4-title" role="region" aria-disabled="true">
           <div class="absolute top-0 right-0 h-2 w-full bg-stone-100" id="step-4-progress-bar"></div>
           
           <div class="flex items-center gap-4 mb-6">
-            <span class="h-8 w-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center font-bold text-sm" id="step-4-num">4</span>
+            <span class="h-8 w-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center font-bold text-sm" id="step-4-num" aria-hidden="true">4</span>
             <h3 class="font-display text-xl font-bold text-stone-400 transition-colors" id="step-4-title">Méthode de paiement</h3>
           </div>
 
@@ -249,13 +306,13 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
             
             <div class="bg-stone-50 border border-stone-200 rounded-2xl p-5 space-y-4">
               <div class="flex items-start gap-3">
-                <div class="h-5 w-5 rounded-full border-4 border-amber-600 bg-amber-600 flex items-center justify-center mt-0.5">
+                <div class="h-5 w-5 rounded-full border-4 border-amber-600 bg-amber-600 flex items-center justify-center mt-0.5" aria-hidden="true">
                   <div class="h-1.5 w-1.5 rounded-full bg-white"></div>
                 </div>
                 <div class="flex-grow">
                   <div class="flex items-center justify-between">
                     <h4 class="text-sm font-bold text-amber-950">Méthode Simulée de Validation</h4>
-                    <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-md">Démo & Test</span>
+                    <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-md" aria-label="Statut : Démo et test uniquement">Démo & Test</span>
                   </div>
                   <p class="text-xs text-stone-500 mt-1 leading-relaxed">
                     Pour cette boutique de miels artisanaux, la commande sera validée en mode **Paiement à la livraison / Virement**. Aucune transaction bancaire réelle ne sera effectuée.
@@ -265,10 +322,10 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
 
               <div class="border-t border-stone-200 pt-4 flex items-center justify-between text-xs text-stone-400">
                 <div class="flex items-center gap-1.5">
-                  <span>🔒</span>
+                  <span aria-hidden="true">🔒</span>
                   <span>Sécurisé par MedusaJS</span>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex gap-2" aria-hidden="true">
                   <span class="text-base grayscale opacity-60">💳</span>
                   <span class="text-base grayscale opacity-60">🤝</span>
                 </div>
@@ -280,13 +337,22 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
               En cliquant sur le bouton ci-dessous, vous acceptez que votre panier soit complété et que votre commande soit préparée par notre miellerie. Un email de confirmation récapitulatif vous sera immédiatement envoyé.
             </p>
 
+            <!-- Panneau d'erreur d'étape 4 (Masqué par défaut) -->
+            <div id="step-4-error-panel" class="hidden p-4 bg-red-50 border border-red-200 text-red-800 rounded-2xl text-xs sm:text-sm font-medium flex items-start gap-2.5 mb-2 animate-fade-in" role="alert" aria-live="assertive">
+              <span class="text-base" aria-hidden="true">⚠️</span>
+              <div class="flex-grow">
+                <p id="step-4-error-text">Une erreur réseau inattendue est survenue lors de la finalisation du paiement. Veuillez réessayer.</p>
+              </div>
+            </div>
+
             <!-- Bouton de paiement final -->
             <button 
               id="checkout-submit-final-btn"
-              class="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-stone-900 rounded-full font-bold text-center transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-3 text-base"
+              type="button"
+              class="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-stone-900 rounded-full font-bold text-center transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-3 text-base focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus:outline-none"
             >
               <span class="whitespace-nowrap">Valider et Confirmer ma commande</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="h-5 w-5 flex-shrink-0 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="h-5 w-5 flex-shrink-0 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </button>
@@ -294,6 +360,7 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
         </div>
 
       </div>
+
 
       <!-- Colonne de droite : Résumé de commande -->
       <div class="lg:col-span-5 lg:sticky lg:top-28">
@@ -414,6 +481,11 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
 
     </div>
 
+    <!-- Bannière d'état réseau flottante (Masquée par défaut) -->
+    <div id="network-status-banner" class="fixed bottom-6 left-6 z-50 transform translate-y-20 opacity-0 transition-all duration-500 max-w-sm rounded-2xl border p-4 shadow-xl flex items-center gap-3 bg-white" role="status" aria-live="polite">
+      <!-- Rempli dynamiquement en JS -->
+    </div>
+
   </div>
 </Layout>
 
@@ -496,12 +568,26 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
   const successShippingEmail = document.getElementById('success-shipping-email');
   const successShippingPhone = document.getElementById('success-shipping-phone');
 
+  // DOM Elements - Éléments de robustesse Réseau & Erreurs
+  const checkoutOfflineState = document.getElementById('checkout-offline-state');
+  const retryCheckoutBtn = document.getElementById('retry-checkout-btn');
+  const networkStatusBanner = document.getElementById('network-status-banner');
+
+  const step1ErrorPanel = document.getElementById('step-1-error-panel');
+  const step1ErrorText = document.getElementById('step-1-error-text');
+  const step2ErrorPanel = document.getElementById('step-2-error-panel');
+  const step2ErrorText = document.getElementById('step-2-error-text');
+  const step3ErrorPanel = document.getElementById('step-3-error-panel');
+  const step3ErrorText = document.getElementById('step-3-error-text');
+  const step4ErrorPanel = document.getElementById('step-4-error-panel');
+  const step4ErrorText = document.getElementById('step-4-error-text');
+
   // Formatage de prix (Medusa v2 utilise directement l'unité principale)
   function formatPrice(amount: number) {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
   }
 
-  // Appels API Medusa Store
+  // Appels API Medusa Store robuste (avec gestion d'erreur réseau / serveur down)
   async function storeFetch(path: string, options: RequestInit = {}) {
     const url = `${MEDUSA_URL}/store${path}`;
     const headers = {
@@ -509,19 +595,84 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
       'x-publishable-api-key': PUBLISHABLE_KEY,
       ...(options.headers || {}),
     };
-    const res = await fetch(url, { ...options, headers });
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error(`Medusa API error at ${path}:`, res.status, errorText);
-      throw new Error(`API Error: ${res.status}`);
+    try {
+      const res = await fetch(url, { ...options, headers });
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`Medusa API error at ${path}:`, res.status, errorText);
+        throw new Error(`API Error: ${res.status}`);
+      }
+      return await res.json();
+    } catch (err) {
+      console.error(`Fetch error inside storeFetch for ${path}:`, err);
+      throw new Error(`Network Error: ${err.message || 'Serveur indisponible'}`);
     }
-    return res.json();
+  }
+
+  // Vérificateur proactif de connexion internet / serveur Medusa
+  async function checkConnectivity(): Promise<boolean> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(`${MEDUSA_URL}/store/regions`, {
+        headers: { 'x-publishable-api-key': PUBLISHABLE_KEY },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return res.ok;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  // Toast premium pour l'état de la connexion en temps réel
+  let toastTimeout: any = null;
+  function showNetworkToast(isOnline: boolean) {
+    if (!networkStatusBanner) return;
+    clearTimeout(toastTimeout);
+
+    if (isOnline) {
+      networkStatusBanner.className = "fixed bottom-6 left-6 z-50 transform translate-y-0 opacity-100 transition-all duration-500 max-w-sm rounded-2xl border p-4 shadow-xl flex items-center gap-3 bg-green-50 border-green-200 text-green-800 glass-premium animate-fade-in";
+      networkStatusBanner.innerHTML = `
+        <span class="text-xl" aria-hidden="true">🟢</span>
+        <div>
+          <h5 class="text-xs font-bold uppercase tracking-wider text-green-950">Connexion Rétablie</h5>
+          <p class="text-[11px] text-green-700 font-medium mt-0.5">Services de la miellerie reconnectés.</p>
+        </div>
+      `;
+      toastTimeout = setTimeout(() => {
+        networkStatusBanner.classList.add('opacity-0', 'translate-y-20');
+        networkStatusBanner.classList.remove('opacity-100', 'translate-y-0');
+      }, 4000);
+    } else {
+      networkStatusBanner.className = "fixed bottom-6 left-6 z-50 transform translate-y-0 opacity-100 transition-all duration-500 max-w-sm rounded-2xl border p-4 shadow-xl flex items-center gap-3 bg-red-50 border-red-200 text-red-800 glass-premium animate-fade-in";
+      networkStatusBanner.innerHTML = `
+        <span class="text-xl animate-pulse" aria-hidden="true">🔴</span>
+        <div>
+          <h5 class="text-xs font-bold uppercase tracking-wider text-red-950">Mode Hors Ligne</h5>
+          <p class="text-[11px] text-red-700 font-medium mt-0.5">La connexion avec notre miellerie a été interrompue. Vos actions sont en attente.</p>
+        </div>
+      `;
+    }
   }
 
   // Initialisation de la page
   async function init() {
+    emptyState?.classList.add('hidden');
+    checkoutOfflineState?.classList.add('hidden');
+
     if (!cartId) {
       showEmptyState();
+      return;
+    }
+
+    loader?.classList.remove('hidden');
+    mainContainer?.classList.add('hidden');
+
+    // Tester la connectivité Medusa
+    const isOnline = await checkConnectivity();
+    if (!isOnline) {
+      showOfflineState();
       return;
     }
 
@@ -556,7 +707,11 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
 
     } catch (e) {
       console.error('Erreur initialisation checkout', e);
-      showEmptyState();
+      if (e.message.includes('Network') || e.message.includes('Failed') || e.message.includes('TypeError')) {
+        showOfflineState();
+      } else {
+        showEmptyState();
+      }
     }
   }
 
@@ -571,7 +726,31 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
     mainContainer?.classList.add('hidden');
   }
 
-  // Navigation entre les étapes
+  function showOfflineState() {
+    loader?.classList.add('hidden');
+    emptyState?.classList.add('hidden');
+    mainContainer?.classList.add('hidden');
+    checkoutOfflineState?.classList.remove('hidden');
+  }
+
+  // Câbler le bouton de ré-essai de chargement
+  retryCheckoutBtn?.addEventListener('click', () => {
+    init();
+  });
+
+  // Listeners pour l'état en ligne/hors ligne en temps réel
+  window.addEventListener('online', () => {
+    showNetworkToast(true);
+    if (checkoutOfflineState && !checkoutOfflineState.classList.contains('hidden')) {
+      init();
+    }
+  });
+
+  window.addEventListener('offline', () => {
+    showNetworkToast(false);
+  });
+
+  // Navigation entre les étapes avec gestion a11y (focus et aria)
   function goToStep(stepNum: number) {
     activeStep = stepNum;
 
@@ -587,6 +766,7 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
       if (s.num < stepNum) {
         // Étapes passées (validées)
         s.card?.classList.remove('opacity-50', 'pointer-events-none');
+        s.card?.setAttribute('aria-disabled', 'false');
         s.form?.classList.add('hidden');
         s.summary?.classList.remove('hidden');
         s.editBtn?.classList.remove('hidden');
@@ -602,6 +782,7 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
       } else if (s.num === stepNum) {
         // Étape active
         s.card?.classList.remove('opacity-50', 'pointer-events-none');
+        s.card?.setAttribute('aria-disabled', 'false');
         s.form?.classList.remove('hidden');
         if (s.summary) s.summary.classList.add('hidden');
         s.editBtn?.classList.add('hidden');
@@ -617,6 +798,7 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
       } else {
         // Étapes futures
         s.card?.classList.add('opacity-50', 'pointer-events-none');
+        s.card?.setAttribute('aria-disabled', 'true');
         s.form?.classList.add('hidden');
         if (s.summary) s.summary.classList.add('hidden');
         s.editBtn?.classList.add('hidden');
@@ -632,9 +814,15 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
       }
     });
 
-    // Ajustement visuel smooth
+    // Ajustement visuel smooth et focus a11y sur la carte
     const targetCard = [step1Card, step2Card, step3Card, step4Card][stepNum - 1];
-    targetCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (targetCard) {
+      targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetCard.setAttribute('tabindex', '-1');
+      setTimeout(() => {
+        targetCard.focus();
+      }, 300);
+    }
   }
 
   // Événements d'édition manuelle des étapes validées
@@ -644,9 +832,16 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
 
   // ÉTAPE 1 : Validation des coordonnées
   submitStep1Btn?.addEventListener('click', () => {
+    // Réinitialiser les erreurs
+    step1ErrorPanel?.classList.add('hidden');
+
     const email = emailInput.value.trim();
     if (!email || !emailInput.checkValidity()) {
-      alert('Veuillez entrer une adresse email valide.');
+      if (step1ErrorPanel && step1ErrorText) {
+        step1ErrorText.innerText = 'Veuillez entrer une adresse email de contact valide.';
+        step1ErrorPanel.classList.remove('hidden');
+        step1ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
     
@@ -657,6 +852,9 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
 
   // ÉTAPE 2 : Validation de l'adresse de livraison et envoi à Medusa
   submitStep2Btn?.addEventListener('click', async () => {
+    // Réinitialiser les erreurs
+    step2ErrorPanel?.classList.add('hidden');
+
     const firstName = firstNameInput.value.trim();
     const lastName = lastNameInput.value.trim();
     const address = addressInput.value.trim();
@@ -665,7 +863,11 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
     const phone = phoneInput.value.trim();
 
     if (!firstName || !lastName || !address || !postalCode || !city || !phone) {
-      alert('Veuillez remplir tous les champs de l\'adresse de livraison.');
+      if (step2ErrorPanel && step2ErrorText) {
+        step2ErrorText.innerText = 'Veuillez remplir tous les champs de l\'adresse de livraison.';
+        step2ErrorPanel.classList.remove('hidden');
+        step2ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -712,7 +914,15 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
 
     } catch (err) {
       console.error(err);
-      alert('Erreur lors de la mise à jour de l\'adresse. Veuillez réessayer.');
+      if (step2ErrorPanel && step2ErrorText) {
+        if (err.message.includes('Network')) {
+          step2ErrorText.innerText = 'Une erreur de connexion est survenue. Impossible d\'enregistrer votre adresse. Veuillez vérifier votre réseau et réessayer.';
+        } else {
+          step2ErrorText.innerText = 'Erreur lors de la mise à jour de l\'adresse de livraison. Veuillez réessayer.';
+        }
+        step2ErrorPanel.classList.remove('hidden');
+        step2ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     } finally {
       submitStep2Btn.innerHTML = origBtnText;
       submitStep2Btn.removeAttribute('disabled');
@@ -787,7 +997,7 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
       console.error(e);
       shippingOptionsList.innerHTML = `
         <div class="p-4 bg-red-50 border border-red-100 rounded-2xl text-xs text-red-750">
-          Une erreur est survenue lors de la récupération des options de livraison.
+          Une erreur est survenue lors de la récupération des options de livraison. Veuillez vérifier votre connexion.
         </div>
       `;
       submitStep3Btn?.setAttribute('disabled', 'true');
@@ -796,9 +1006,16 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
 
   // ÉTAPE 3 : Validation de la livraison
   submitStep3Btn?.addEventListener('click', async () => {
+    // Réinitialiser les erreurs
+    step3ErrorPanel?.classList.add('hidden');
+
     const selectedRadio = document.querySelector('input[name="shipping_option"]:checked') as HTMLInputElement;
     if (!selectedRadio) {
-      alert('Veuillez sélectionner un mode de livraison.');
+      if (step3ErrorPanel && step3ErrorText) {
+        step3ErrorText.innerText = 'Veuillez sélectionner un mode de livraison.';
+        step3ErrorPanel.classList.remove('hidden');
+        step3ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -831,7 +1048,15 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
 
     } catch (e) {
       console.error(e);
-      alert('Erreur lors de la configuration de l\'expédition. Veuillez réessayer.');
+      if (step3ErrorPanel && step3ErrorText) {
+        if (e.message.includes('Network')) {
+          step3ErrorText.innerText = 'Une erreur de connexion est survenue. Impossible d\'enregistrer le mode de livraison. Veuillez vérifier votre connexion.';
+        } else {
+          step3ErrorText.innerText = 'Erreur lors de la configuration de l\'expédition. Veuillez réessayer.';
+        }
+        step3ErrorPanel.classList.remove('hidden');
+        step3ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     } finally {
       submitStep3Btn.innerHTML = origBtnText;
       submitStep3Btn.removeAttribute('disabled');
@@ -840,8 +1065,12 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
 
   // ÉTAPE 4 : Validation finale du paiement (COMPLETE DU CHECKOUT)
   submitFinalBtn?.addEventListener('click', async () => {
+    // Réinitialiser les erreurs
+    step4ErrorPanel?.classList.add('hidden');
+
     // Loader sur le bouton final
     submitFinalBtn.setAttribute('disabled', 'true');
+    const origBtnContent = submitFinalBtn.innerHTML;
     submitFinalBtn.innerHTML = `
       <span>Validation de votre commande...</span>
       <div class="h-5 w-5 border-2 border-stone-900 border-t-transparent animate-spin rounded-full"></div>
@@ -885,14 +1114,17 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
 
     } catch (err) {
       console.error('Finalisation de checkout échouée', err);
-      alert('Une erreur inattendue est survenue lors de la finalisation de votre paiement. Veuillez contacter notre service client.');
+      if (step4ErrorPanel && step4ErrorText) {
+        if (err.message.includes('Network')) {
+          step4ErrorText.innerText = 'Une erreur réseau est survenue lors de la validation du paiement. Veuillez vérifier votre connexion et cliquer de nouveau pour réessayer.';
+        } else {
+          step4ErrorText.innerText = 'Une erreur inattendue est survenue lors de la finalisation de votre paiement. Veuillez réessayer ou contacter notre service client.';
+        }
+        step4ErrorPanel.classList.remove('hidden');
+        step4ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       submitFinalBtn.removeAttribute('disabled');
-      submitFinalBtn.innerHTML = `
-        <span>Valider et Confirmer ma commande</span>
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      `;
+      submitFinalBtn.innerHTML = origBtnContent;
     }
   });
 
@@ -914,6 +1146,13 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
 
     // Scroll au sommet
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Focus sur le titre de succès pour accessibilité
+    const successTitle = successContainer?.querySelector('h2');
+    if (successTitle) {
+      successTitle.setAttribute('tabindex', '-1');
+      successTitle.focus();
+    }
   }
 
   // Mettre à jour l'UI du résumé de commande de droite
@@ -957,6 +1196,7 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
   // Lancement
   init();
 </script>
+
 
 <style>
   /* Animations fines pour le checkout */

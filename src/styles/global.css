@@ -97,3 +97,14 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb:hover {
   background: #d97706;
 }
+
+/* Accessibilité de la mise au point (Focus-visible) à fort contraste ambré */
+:focus-visible {
+  outline: 2px solid #d97706 !important;
+  outline-offset: 4px !important;
+}
+
+/* Bannière d'état réseau flottante premium */
+#network-status-banner {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease-out;
+}
