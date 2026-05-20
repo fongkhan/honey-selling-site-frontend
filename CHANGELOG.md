@@ -7,6 +7,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — versioning:
 ## [Unreleased]
 
 ### Added
+- Données Structurées JSON-LD intégrées à la volée dans le `<head>` de la mise en page générale (`Layout.astro`) de type `Store`, et sur les fiches produits (`boutique/[handle]` et `produits/[handle]`) de type `Product` pour une indexation sémantique (SEO) optimale.
 - Cartes de produits de la page d'accueil cliquables : enveloppement du visuel pot de miel 🍯 et du titre `h3` dans des balises `<a>` pointant vers `/boutique/[handle]` (dans le bloc CMS et le repli HTML).
 - Barre de navigation auto-adaptative (Dynamic Navbar) : récupération, filtrage (exclusion de `home`/`boutique`) et tri automatique (via `navbarOrder`) des pages du CMS dans `Layout.astro`, avec fallback raffiné.
 - Routeur universel catch-all à la racine (`src/pages/[slug].astro`) pre-générant à la compilation (SSG) toutes les pages éditées dans Payload.
