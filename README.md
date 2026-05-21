@@ -84,7 +84,7 @@ frontend/
 ## Fonctionnalités Avancées
 
 1. **Checkout en 4 étapes (`/commande`)** :
-   Un accordéon de commande fluide qui guide le client à travers les étapes de saisie de contact, d'adresse de livraison, de choix des modes de livraison et de simulation de paiement en temps réel avec le serveur e-commerce Medusa v2.
+   Un accordéon de commande fluide qui guide le client à travers les étapes de saisie de contact, d'adresse de livraison, de choix des modes de livraison et de règlement sécurisé via **Stripe Payment Element**. Ce module intègre le support de **Google Pay** et des cartes bancaires de manière fluide et sécurisée (avec exclusion d'Apple Pay), prenant en charge les paiements directs inline (via `redirect: 'if_required'`) et les redirections sécurisées (comme 3D Secure) de manière résiliente.
 
 2. **Navbar Auto-Adaptative** :
    La barre de navigation se synchronise automatiquement avec les pages créées et configurées dans Payload CMS. Elle filtre la page d'accueil et la boutique pour n'afficher que vos pages institutionnelles (comme "Notre Histoire") triées selon l'ordre défini.

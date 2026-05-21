@@ -13,7 +13,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — versioning:
 - Barre de navigation auto-adaptative (Dynamic Navbar) : récupération, filtrage (exclusion de `home`/`boutique`) et tri automatique (via `navbarOrder`) des pages du CMS dans `Layout.astro`, avec fallback raffiné.
 - Routeur universel catch-all à la racine (`src/pages/[slug].astro`) pre-générant à la compilation (SSG) toutes les pages éditées dans Payload.
 - Prise en charge des 8 types de blocs de mise en page CMS (`hero`, `pageHeader`, `values`, `story`, `engagements`, `quote`, `featuredProducts`, `latestPosts`) dans le rendu dynamique du routeur.
-- Formulaire interactif de commande (Checkout) complet en 4 étapes (`/commande`) câblé en temps réel avec Medusa v2 (contact, adresse, livraison, paiement par défaut `pp_system_default`).
+- Intégration du moderne **Stripe Payment Element (Option B)** au tunnel de checkout (`/commande`), offrant le support automatique de **Google Pay** et des cartes bancaires.
+- Désactivation explicite d'Apple Pay (`wallets: { applePay: 'never' }`) pour respecter les contraintes budgétaires sans impacter le support de Google Pay.
+- Mécanisme de double confirmation du paiement : inline sans rechargement pour les flux directs via `redirect: 'if_required'`, et parseur de retour de redirection (3D Secure) dans `init()` complétant le panier Medusa de manière résiliente.
+- Personnalisation esthétique complète de l'élément de paiement Stripe (couleurs ambre et pierre HSL, typographie Outfit, angles adoucis) pour s'harmoniser avec la vitrine.
 
 ### Fixed
 - JavaScript de la galerie d'images sur la fiche produit : correction du bug de closure en récupérant dynamiquement le nœud d'image principal dans le DOM à chaque clic, garantissant une mise à jour robuste et sans duplication.

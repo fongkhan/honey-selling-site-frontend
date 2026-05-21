@@ -3,9 +3,13 @@ import Layout from '../layouts/Layout.astro';
 
 const MEDUSA_URL = import.meta.env.MEDUSA_PUBLIC_URL ?? 'http://localhost:9000';
 const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
+const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
 ---
 
 <Layout title="Finaliser ma commande">
+  <!-- Stripe JS SDK Injection -->
+  <script src="https://js.stripe.com/v3/" is:inline></script>
+  <div id="stripe-config" data-stripe-key={PUBLIC_STRIPE_KEY} class="hidden"></div>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
     <!-- Fil d'Ariane élégant -->
     <nav class="flex mb-8 text-sm font-medium text-stone-500 gap-2 items-center" aria-label="Breadcrumb">
@@ -301,40 +305,37 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
             <h3 class="font-display text-xl font-bold text-stone-400 transition-colors" id="step-4-title">Méthode de paiement</h3>
           </div>
 
-          <!-- Paiement simulation -->
+          <!-- Paiement Stripe -->
           <div id="step-4-form-container" class="hidden space-y-6">
             
-            <div class="bg-stone-50 border border-stone-200 rounded-2xl p-5 space-y-4">
-              <div class="flex items-start gap-3">
-                <div class="h-5 w-5 rounded-full border-4 border-amber-600 bg-amber-600 flex items-center justify-center mt-0.5" aria-hidden="true">
-                  <div class="h-1.5 w-1.5 rounded-full bg-white"></div>
-                </div>
-                <div class="flex-grow">
-                  <div class="flex items-center justify-between">
-                    <h4 class="text-sm font-bold text-amber-950">Méthode Simulée de Validation</h4>
-                    <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-md" aria-label="Statut : Démo et test uniquement">Démo & Test</span>
-                  </div>
-                  <p class="text-xs text-stone-500 mt-1 leading-relaxed">
-                    Pour cette boutique de miels artisanaux, la commande sera validée en mode **Paiement à la livraison / Virement**. Aucune transaction bancaire réelle ne sera effectuée.
-                  </p>
-                </div>
+            <!-- Spinner / Chargement Stripe -->
+            <div id="stripe-loading" class="flex flex-col items-center justify-center p-8 bg-stone-50 border border-stone-100 rounded-2xl space-y-3 animate-pulse">
+              <div class="h-6 w-6 border-2 border-amber-600 border-t-transparent animate-spin rounded-full"></div>
+              <p class="text-xs text-stone-500 font-medium">Chargement du paiement sécurisé Stripe...</p>
+            </div>
+
+            <!-- Conteneur Stripe Elements -->
+            <div id="stripe-payment-wrapper" class="hidden space-y-4">
+              <label class="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-1">Carte Bancaire</label>
+              
+              <div id="stripe-card-element" class="p-4 bg-stone-50 border border-stone-200 rounded-2xl focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-amber-600 transition-all duration-300">
+                <!-- Rendu sécurisé par Stripe -->
               </div>
 
-              <div class="border-t border-stone-200 pt-4 flex items-center justify-between text-xs text-stone-400">
+              <div class="flex items-center justify-between text-xs text-stone-400 mt-2 px-1">
                 <div class="flex items-center gap-1.5">
                   <span aria-hidden="true">🔒</span>
-                  <span>Sécurisé par MedusaJS</span>
+                  <span>Paiement 100% sécurisé (SSL)</span>
                 </div>
                 <div class="flex gap-2" aria-hidden="true">
-                  <span class="text-base grayscale opacity-60">💳</span>
-                  <span class="text-base grayscale opacity-60">🤝</span>
+                  <span class="text-base grayscale opacity-65">💳 Visa / Mastercard</span>
                 </div>
               </div>
             </div>
 
             <!-- Conditions d'utilisation -->
-            <p class="text-xs text-stone-500 leading-relaxed">
-              En cliquant sur le bouton ci-dessous, vous acceptez que votre panier soit complété et que votre commande soit préparée par notre miellerie. Un email de confirmation récapitulatif vous sera immédiatement envoyé.
+            <p class="text-xs text-stone-550 leading-relaxed">
+              En clicking sur le bouton ci-dessous, vous acceptez que votre commande de miels d'exception soit préparée par notre miellerie. Votre transaction est cryptée et sécurisée par la passerelle de paiement **Stripe**.
             </p>
 
             <!-- Panneau d'erreur d'étape 4 (Masqué par défaut) -->
@@ -351,7 +352,7 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
               type="button"
               class="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-stone-900 rounded-full font-bold text-center transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-3 text-base focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus:outline-none"
             >
-              <span class="whitespace-nowrap">Valider et Confirmer ma commande</span>
+              <span class="whitespace-nowrap">Valider et Régler ma commande</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="h-5 w-5 flex-shrink-0 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
               </svg>
@@ -495,10 +496,19 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
   const MEDUSA_URL = 'http://localhost:9000';
   const PUBLISHABLE_KEY = 'pk_0f9d9259c9d5bcca12a1fbdfea9a766503cc51ef62b51db08c52833dc07bb220';
 
+  // Récupération de la clé Stripe publique
+  const stripePublicKey = document.getElementById('stripe-config')?.dataset.stripeKey || '';
+
   // État local de la page
   let cartId = localStorage.getItem('medusa_cart_id');
   let currentCart: any = null;
   let activeStep = 1;
+
+  // Stripe Elements state
+  let stripeInstance: any = null;
+  let elementsInstance: any = null;
+  let cardElementInstance: any = null;
+  let stripeClientSecret: string = '';
 
   // DOM Elements - Général
   const loader = document.getElementById('checkout-initial-loader');
@@ -552,6 +562,8 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
   const step4Num = document.getElementById('step-4-num');
   const step4Title = document.getElementById('step-4-title');
   const submitFinalBtn = document.getElementById('checkout-submit-final-btn');
+  const stripeLoading = document.getElementById('stripe-loading');
+  const stripePaymentWrapper = document.getElementById('stripe-payment-wrapper');
 
   // DOM Elements - Summary
   const summaryItems = document.getElementById('checkout-summary-items');
@@ -660,6 +672,28 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
   async function init() {
     emptyState?.classList.add('hidden');
     checkoutOfflineState?.classList.add('hidden');
+
+    // 1. Gérer le retour d'une redirection de paiement réussie (3D Secure)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true' && urlParams.get('cart_id')) {
+      const redirectCartId = urlParams.get('cart_id');
+      loader?.classList.remove('hidden');
+      mainContainer?.classList.add('hidden');
+      try {
+        const completeRes = await storeFetch(`/carts/${redirectCartId}/complete`, {
+          method: 'POST'
+        });
+        if (completeRes.type === 'order' && completeRes.order) {
+          localStorage.removeItem('medusa_cart_id');
+          cartId = null;
+          window.dispatchEvent(new Event('cart-updated'));
+          showSuccessState(completeRes.order);
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to complete order after redirect:', e);
+      }
+    }
 
     if (!cartId) {
       showEmptyState();
@@ -822,6 +856,108 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
       setTimeout(() => {
         targetCard.focus();
       }, 300);
+    }
+
+    // Initialisation du paiement Stripe à l'étape 4
+    if (stepNum === 4) {
+      initStripePayment();
+    }
+  }
+
+  // Initialisation de la session de paiement Stripe sécurisée
+  async function initStripePayment() {
+    if (!stripeLoading || !stripePaymentWrapper || !step4ErrorPanel || !step4ErrorText) return;
+    
+    // 1. Reset visual states
+    stripeLoading.classList.remove('hidden');
+    stripePaymentWrapper.classList.add('hidden');
+    step4ErrorPanel.classList.add('hidden');
+
+    try {
+      // S'assurer que le script Stripe est chargé et globalement disponible
+      if (!(window as any).Stripe) {
+        throw new Error("Le SDK Stripe n'a pas pu être chargé. Veuillez vérifier votre connexion.");
+      }
+
+      // Initialiser Stripe si ce n'est pas déjà fait
+      if (!stripeInstance) {
+        stripeInstance = (window as any).Stripe(stripePublicKey);
+      }
+
+      // 2. Créer la Collection de Paiement (indispensable pour Medusa v2)
+      const collectionRes = await storeFetch('/payment-collections', {
+        method: 'POST',
+        body: JSON.stringify({ cart_id: cartId })
+      });
+      const paymentCollectionId = collectionRes.payment_collection.id;
+
+      // 3. Initialiser la session de paiement avec le provider 'pp_stripe_stripe'
+      const sessionRes = await storeFetch(`/payment-collections/${paymentCollectionId}/payment-sessions`, {
+        method: 'POST',
+        body: JSON.stringify({ provider_id: 'pp_stripe_stripe' })
+      });
+
+      // Trouver la session de paiement Stripe
+      const sessions = sessionRes.payment_collection.payment_sessions;
+      const stripeSession = sessions.find((s: any) => s.provider_id === 'pp_stripe_stripe');
+
+      if (!stripeSession || !stripeSession.data || !stripeSession.data.client_secret) {
+        throw new Error("Impossible d'obtenir la session de paiement Stripe. Vérifiez la configuration.");
+      }
+
+      stripeClientSecret = stripeSession.data.client_secret;
+
+      // 4. Instancier le formulaire Stripe Elements Payment Element (Cartes & Google Pay)
+      if (!cardElementInstance) {
+        elementsInstance = stripeInstance.elements({
+          clientSecret: stripeClientSecret,
+          appearance: {
+            theme: 'flat',
+            variables: {
+              colorPrimary: '#d97706', // amber-600
+              colorBackground: '#fafaf9', // stone-50
+              colorText: '#1c1917', // stone-900
+              colorDanger: '#dc2626', // red-600
+              fontFamily: 'Outfit, system-ui, sans-serif',
+              borderRadius: '16px',
+            }
+          }
+        });
+        
+        cardElementInstance = elementsInstance.create('payment', {
+          layout: 'accordion',
+          wallets: {
+            applePay: 'never',
+          }
+        });
+        
+        cardElementInstance.mount('#stripe-card-element');
+        
+        // Écouter les erreurs de saisie en direct
+        cardElementInstance.on('change', (event: any) => {
+          if (event.error) {
+            step4ErrorText.innerText = event.error.message;
+            step4ErrorPanel.classList.remove('hidden');
+          } else {
+            step4ErrorPanel.classList.add('hidden');
+          }
+        });
+      }
+
+      // 5. Afficher le formulaire et masquer le loader
+      stripeLoading.classList.add('hidden');
+      stripePaymentWrapper.classList.remove('hidden');
+
+    } catch (err: any) {
+      console.error('Erreur initialisation Stripe', err);
+      stripeLoading.classList.add('hidden');
+      if (err.message.includes('Network') || err.message.includes('connexion')) {
+        step4ErrorText.innerText = 'Une erreur de connexion est survenue. Impossible d\'initialiser le paiement sécurisé Stripe. Veuillez vérifier votre réseau et réessayer.';
+      } else {
+        step4ErrorText.innerText = `Erreur de paiement : ${err.message || 'Impossible de charger la ruche de paiement Stripe. Veuillez contacter le support.'}`;
+      }
+      step4ErrorPanel.classList.remove('hidden');
+      step4ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
 
@@ -1063,62 +1199,96 @@ const PUBLISHABLE_KEY = import.meta.env.MEDUSA_PUBLISHABLE_KEY ?? '';
     }
   });
 
-  // ÉTAPE 4 : Validation finale du paiement (COMPLETE DU CHECKOUT)
+  // ÉTAPE 4 : Validation finale du paiement (COMPLETE DU CHECKOUT AVEC STRIPE)
   submitFinalBtn?.addEventListener('click', async () => {
     // Réinitialiser les erreurs
     step4ErrorPanel?.classList.add('hidden');
+
+    // S'assurer que Stripe est bien initialisé et qu'on a le client secret
+    if (!stripeInstance || !cardElementInstance || !elementsInstance || !stripeClientSecret) {
+      if (step4ErrorPanel && step4ErrorText) {
+        step4ErrorText.innerText = "Le service de paiement Stripe n'a pas été initialisé correctement. Veuillez rafraîchir la page et réessayer.";
+        step4ErrorPanel.classList.remove('hidden');
+        step4ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
 
     // Loader sur le bouton final
     submitFinalBtn.setAttribute('disabled', 'true');
     const origBtnContent = submitFinalBtn.innerHTML;
     submitFinalBtn.innerHTML = `
-      <span>Validation de votre commande...</span>
-      <div class="h-5 w-5 border-2 border-stone-900 border-t-transparent animate-spin rounded-full"></div>
+      <span>Paiement sécurisé en cours...</span>
+      <div class="h-5 w-5 border-2 border-amber-950 border-t-transparent animate-spin rounded-full"></div>
     `;
 
     try {
-      // 1. Créer la Collection de Paiement
-      const collectionRes = await storeFetch('/payment-collections', {
-        method: 'POST',
-        body: JSON.stringify({ cart_id: cartId })
+      // 1. Confirmer le paiement avec Stripe Elements (Payment Element)
+      const confirmRes = await stripeInstance.confirmPayment({
+        elements: elementsInstance,
+        confirmParams: {
+          payment_method_data: {
+            billing_details: {
+              name: `${firstNameInput?.value || ''} ${lastNameInput?.value || ''}`.trim() || undefined,
+              email: emailInput?.value || undefined,
+              phone: phoneInput?.value || undefined,
+              address: {
+                line1: addressInput?.value || undefined,
+                city: cityInput?.value || undefined,
+                postal_code: postalCodeInput?.value || undefined,
+                country: 'FR'
+              }
+            }
+          },
+          return_url: `${window.location.origin}/commande?success=true&cart_id=${cartId}`
+        },
+        redirect: 'if_required'
       });
-      const paymentCollectionId = collectionRes.payment_collection.id;
 
-      // 2. Initialiser la session de paiement avec le provider pp_system_default (le provider système par défaut de MedusaJS v2)
-      await storeFetch(`/payment-collections/${paymentCollectionId}/payment-sessions`, {
-        method: 'POST',
-        body: JSON.stringify({ provider_id: 'pp_system_default' })
-      });
-
-      // 3. Compléter la commande
-      const completeRes = await storeFetch(`/carts/${cartId}/complete`, {
-        method: 'POST'
-      });
-
-      if (completeRes.type === 'order' && completeRes.order) {
-        const order = completeRes.order;
-        
-        // Nettoyer localement
-        localStorage.removeItem('medusa_cart_id');
-        cartId = null;
-
-        // Déclencher un événement global pour que la barre de navigation se mette à jour
-        window.dispatchEvent(new Event('cart-updated'));
-
-        // Afficher l'écran de succès
-        showSuccessState(order);
-
-      } else {
-        throw new Error('La finalisation du panier n\'a pas retourné de commande.');
+      if (confirmRes.error) {
+        throw new Error(confirmRes.error.message);
       }
 
-    } catch (err) {
-      console.error('Finalisation de checkout échouée', err);
-      if (step4ErrorPanel && step4ErrorText) {
-        if (err.message.includes('Network')) {
-          step4ErrorText.innerText = 'Une erreur réseau est survenue lors de la validation du paiement. Veuillez vérifier votre connexion et cliquer de nouveau pour réessayer.';
+      // 2. Si le paiement est validé chez Stripe (ou s'il réussit inline sans redirection)
+      if (confirmRes.paymentIntent && (confirmRes.paymentIntent.status === 'succeeded' || confirmRes.paymentIntent.status === 'requires_capture')) {
+        
+        // Mettre à jour l'affichage pour la phase finale
+        submitFinalBtn.innerHTML = `
+          <span>Enregistrement de votre commande...</span>
+          <div class="h-5 w-5 border-2 border-amber-950 border-t-transparent animate-spin rounded-full"></div>
+        `;
+
+        const completeRes = await storeFetch(`/carts/${cartId}/complete`, {
+          method: 'POST'
+        });
+
+        if (completeRes.type === 'order' && completeRes.order) {
+          const order = completeRes.order;
+          
+          // Nettoyer localement le panier
+          localStorage.removeItem('medusa_cart_id');
+          cartId = null;
+
+          // Déclencher un événement global pour mettre à jour les compteurs du panier
+          window.dispatchEvent(new Event('cart-updated'));
+
+          // Afficher l'écran de succès premium
+          showSuccessState(order);
+
         } else {
-          step4ErrorText.innerText = 'Une erreur inattendue est survenue lors de la finalisation de votre paiement. Veuillez réessayer ou contacter notre service client.';
+          throw new Error('La finalisation du panier n\'a pas retourné de commande dans Medusa.');
+        }
+      } else {
+        throw new Error('La transaction de paiement n\'a pas pu être validée par Stripe.');
+      }
+
+    } catch (err: any) {
+      console.error('Finalisation du checkout Stripe échouée', err);
+      if (step4ErrorPanel && step4ErrorText) {
+        if (err.message.includes('Network') || err.message.includes('réseau')) {
+          step4ErrorText.innerText = 'Une erreur réseau est survenue lors de la validation. Veuillez vérifier votre connexion et cliquer de nouveau pour réessayer.';
+        } else {
+          step4ErrorText.innerText = err.message || 'Une erreur inattendue est survenue lors de la validation de votre paiement. Veuillez réessayer.';
         }
         step4ErrorPanel.classList.remove('hidden');
         step4ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
