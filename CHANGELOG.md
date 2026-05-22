@@ -9,6 +9,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — versioning:
 ### Added
 - **Alternative de contact flexible (Email ou Téléphone)** : Le champ email de l'Étape 1 est désormais facultatif. Si l'email est laissé vide, le champ téléphone de l'Étape 2 devient obligatoire avec un badge dynamique.
 - **Bypass Géographique par Engagement de Déplacement** : Affichage d'un panneau d'avertissement ambré en verre dépoli (`travel-commitment-container`) si l'adresse est hors Paris/Clamart. La case à cocher d'engagement permet de bypasser le blocage et de finaliser la commande.
+- **Harmonisation Cohérente des Textes de Retrait (Étape 4 & Succès)** : Adaptation dynamique en temps réel du texte descriptif de l'Étape 4 et des instructions de l'Écran de Succès. Si le client habite hors zone mais s'est engagé à se déplacer, les textes remplacent la mention restrictive de résidence à Paris/Clamart par la validation de leur engagement de déplacement à Clamart ou en dépôt-vente.
 - **E-mail Technique de Repli** : Génération transparente d'un e-mail fictif (`retrait-physique-TELEPHONE@lamiellerieroyale.fr`) pour Medusa v2 lors d'une commande par téléphone uniquement.
 - **Masquage Intelligent** : Les e-mails techniques fictifs sont filtrés et masqués à l'initialisation des formulaires et sur la page de succès final.
 - **Système de Vente Directe Locale & Clamart (92140)** : Adaptation de l'éligibilité locale de Montrouge à Clamart (92140) et Paris (codes postaux commençant par `75`).
