@@ -7,6 +7,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — versioning:
 ## [Unreleased]
 
 ### Added
+- **Alternative de contact flexible (Email ou Téléphone)** : Le champ email de l'Étape 1 est désormais facultatif. Si l'email est laissé vide, le champ téléphone de l'Étape 2 devient obligatoire avec un badge dynamique.
+- **Bypass Géographique par Engagement de Déplacement** : Affichage d'un panneau d'avertissement ambré en verre dépoli (`travel-commitment-container`) si l'adresse est hors Paris/Clamart. La case à cocher d'engagement permet de bypasser le blocage et de finaliser la commande.
+- **E-mail Technique de Repli** : Génération transparente d'un e-mail fictif (`retrait-physique-TELEPHONE@lamiellerieroyale.fr`) pour Medusa v2 lors d'une commande par téléphone uniquement.
+- **Masquage Intelligent** : Les e-mails techniques fictifs sont filtrés et masqués à l'initialisation des formulaires et sur la page de succès final.
 - **Système de Vente Directe Locale & Clamart (92140)** : Adaptation de l'éligibilité locale de Montrouge à Clamart (92140) et Paris (codes postaux commençant par `75`).
 - **Blocage Géographique Strict (Étape 2)** : Ajout d'une validation stricte interdisant la commande aux clients hors secteurs éligibles (Paris / Clamart), avec affichage d'un panneau d'alerte rouge premium en verre poli.
 - **Désactivation Totale des Paiements en Ligne** : Masquage complet du module Stripe Elements, suppression de l'injection du script externe Stripe SDK, et neutralisation des flux Google Pay/cartes de crédit pour privilégier le paiement physique à la livraison.

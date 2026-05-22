@@ -79,12 +79,10 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
                 id="contact-email" 
                 placeholder="jean.dupont@exemple.com" 
                 class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-amber-500 transition-all text-sm font-medium"
-                required
                 autocomplete="email"
-                aria-required="true"
                 aria-describedby="contact-email-desc"
               />
-              <p id="contact-email-desc" class="text-[11px] text-stone-400 mt-1.5">Pour le suivi de votre livraison de miel et l'envoi de votre reçu.</p>
+              <p id="contact-email-desc" class="text-[11px] text-stone-400 mt-1.5">Pour le suivi de votre commande. Optionnel si vous fournissez votre numéro de téléphone à l'étape suivante.</p>
             </div>
 
             <!-- Panneau d'erreur d'étape 1 (Masqué par défaut) -->
@@ -196,15 +194,16 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label for="shipping-phone" class="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2">Téléphone</label>
+                <label for="shipping-phone" class="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-2 flex justify-between">
+                  <span>Téléphone</span>
+                  <span id="phone-optional-badge" class="text-[10px] text-stone-400 normal-case font-medium">Requis si aucun email fourni</span>
+                </label>
                 <input 
                   type="tel" 
                   id="shipping-phone" 
                   placeholder="06 12 34 56 78" 
                   class="w-full px-4 py-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-950 focus:outline-none focus:border-amber-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-amber-500 transition-all text-sm font-medium"
-                  required
                   autocomplete="tel"
-                  aria-required="true"
                 />
               </div>
               <div>
@@ -216,6 +215,31 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
                   class="w-full px-4 py-3 bg-stone-200 rounded-xl border border-stone-200 text-stone-500 font-semibold text-sm cursor-not-allowed"
                   disabled
                 />
+              </div>
+            </div>
+
+            <!-- Conteneur d'engagement de déplacement pour le retrait (Masqué par défaut) -->
+            <div id="travel-commitment-container" class="hidden p-5 bg-amber-50/60 border border-amber-250 text-amber-950 rounded-2xl text-xs sm:text-sm leading-relaxed space-y-3 mt-2 animate-fade-in glass-premium">
+              <div class="flex items-start gap-3">
+                <span class="text-xl animate-pulse" aria-hidden="true">📍</span>
+                <div class="flex-grow space-y-2">
+                  <h4 class="font-bold text-amber-950 text-sm">Zone de livraison directe éloignée</h4>
+                  <p class="text-stone-600 text-xs">
+                    Nous distribuons nos miels d'exception en circuit ultra-court <strong>exclusivement en physique</strong> autour de chez nous.
+                  </p>
+                  <p class="text-stone-600 text-xs font-medium">
+                    Si vous habitez en dehors de <strong>Paris ou Clamart</strong>, vous pouvez tout de même valider votre réservation si vous êtes proche d'un de nos dépôts-vente partenaires ou si vous acceptez de vous déplacer à Clamart pour récupérer vos pots.
+                  </p>
+                  
+                  <label class="flex items-center gap-2.5 text-xs font-bold text-amber-950 cursor-pointer pt-1">
+                    <input 
+                      type="checkbox" 
+                      id="travel-commitment-checkbox" 
+                      class="rounded border-stone-300 text-amber-600 focus:ring-amber-500 h-4.5 w-4.5 cursor-pointer accent-amber-600" 
+                    />
+                    <span>Je m'engage à me déplacer à Paris / Clamart ou dans un dépôt-vente partenaire pour récupérer mes miels</span>
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -752,7 +776,7 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
       }
 
       // Remplir le formulaire avec les valeurs existantes si possibles
-      if (currentCart.email) {
+      if (currentCart.email && !currentCart.email.includes('retrait-physique-')) {
         emailInput.value = currentCart.email;
       }
       if (currentCart.shipping_address) {
@@ -942,9 +966,9 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     step1ErrorPanel?.classList.add('hidden');
 
     const email = emailInput.value.trim();
-    if (!email || !emailInput.checkValidity()) {
+    if (email && !emailInput.checkValidity()) {
       if (step1ErrorPanel && step1ErrorText) {
-        step1ErrorText.innerText = 'Veuillez entrer une adresse email de contact valide.';
+        step1ErrorText.innerText = 'Veuillez entrer une adresse email valide ou laisser le champ vide si vous préférez indiquer un numéro de téléphone.';
         step1ErrorPanel.classList.remove('hidden');
         step1ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
@@ -952,7 +976,22 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     }
     
     // Mettre à jour l'affichage
-    if (summaryEmail) summaryEmail.innerText = email;
+    if (summaryEmail) {
+      summaryEmail.innerText = email || 'Non renseigné (téléphone requis)';
+    }
+
+    // Mettre à jour le badge du numéro de téléphone à l'étape 2
+    const badge = document.getElementById('phone-optional-badge');
+    if (badge) {
+      if (email) {
+        badge.innerText = '(Optionnel)';
+        badge.className = 'text-[10px] text-stone-400 normal-case font-medium';
+      } else {
+        badge.innerText = '(Obligatoire - aucun email fourni)';
+        badge.className = 'text-[10px] text-red-650 normal-case font-bold animate-pulse';
+      }
+    }
+
     goToStep(2);
   });
 
@@ -968,38 +1007,50 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     const city = cityInput.value.trim();
     const phone = phoneInput.value.trim();
 
-    if (!firstName || !lastName || !address || !postalCode || !city || !phone) {
+    const email = emailInput.value.trim();
+    const isPhoneRequired = !email;
+
+    if (!firstName || !lastName || !address || !postalCode || !city || (isPhoneRequired && !phone)) {
       if (step2ErrorPanel && step2ErrorText) {
-        step2ErrorText.innerText = 'Veuillez remplir tous les champs de l\'adresse de livraison.';
+        if (isPhoneRequired && !phone) {
+          step2ErrorText.innerText = 'Le numéro de téléphone est obligatoire car vous n\'avez pas fourni d\'adresse email à l\'étape 1.';
+        } else {
+          step2ErrorText.innerText = 'Veuillez remplir tous les champs obligatoires de l\'adresse de livraison.';
+        }
         step2ErrorPanel.classList.remove('hidden');
         step2ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       return;
     }
 
-    // Validation géographique stricte (Paris 75xxx ou Clamart 92140 uniquement)
+    // Validation géographique (Paris 75xxx ou Clamart 92140)
     const isParis = postalCode.startsWith('75') || city.toLowerCase().includes('paris');
     const isClamart = postalCode.startsWith('92140') || city.toLowerCase().includes('clamart');
 
+    const travelContainer = document.getElementById('travel-commitment-container');
+    const travelCheckbox = document.getElementById('travel-commitment-checkbox') as HTMLInputElement;
+
     if (!isParis && !isClamart) {
-      if (step2ErrorPanel && step2ErrorText) {
-        step2ErrorText.innerHTML = `
-          <div class="space-y-2 text-left">
-            <p class="font-bold text-red-950 flex items-center gap-1.5 text-sm">
-              <span>📍</span> Zone de livraison non éligible
-            </p>
-            <p class="text-xs text-red-800 leading-relaxed">
-              Nous vendons notre miel d'exception <strong>exclusivement en direct et en physique (main propre ou dépôts-vente partenaires)</strong> à proximité de chez nous afin de privilégier un circuit ultra-court.
-            </p>
-            <p class="text-xs text-red-800 font-semibold">
-              Pour commander, votre adresse de livraison doit être située à Paris (75xxx) ou Clamart (92140).
-            </p>
-          </div>
-        `;
-        step2ErrorPanel.classList.remove('hidden');
-        step2ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (travelContainer) {
+        travelContainer.classList.remove('hidden');
+        travelContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-      return;
+      
+      if (!travelCheckbox || !travelCheckbox.checked) {
+        if (step2ErrorPanel && step2ErrorText) {
+          step2ErrorText.innerText = 'Vous résidez hors de notre zone directe. Veuillez cocher la case ci-dessous pour confirmer que vous acceptez de vous déplacer à Clamart ou dans un dépôt-vente partenaire pour récupérer vos pots.';
+          step2ErrorPanel.classList.remove('hidden');
+          step2ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+    } else {
+      if (travelContainer) {
+        travelContainer.classList.add('hidden');
+      }
+      if (travelCheckbox) {
+        travelCheckbox.checked = false;
+      }
     }
 
     // Afficher un loader temporaire sur le bouton
@@ -1008,9 +1059,13 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     submitStep2Btn.setAttribute('disabled', 'true');
 
     try {
+      // Si l'utilisateur n'a pas saisi d'email, Medusa v2 exigeant impérativement un e-mail valide,
+      // on en génère un fictif de manière 100% transparente.
+      const finalEmail = email || `retrait-physique-${phone.replace(/\s+/g, '')}@lamiellerieroyale.fr`;
+
       // 1. Envoyer l'adresse et l'email au panier Medusa
       const body = {
-        email: emailInput.value.trim(),
+        email: finalEmail,
         shipping_address: {
           first_name: firstName,
           last_name: lastName,
@@ -1032,7 +1087,7 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
       if (summaryAddressName) summaryAddressName.innerText = `${firstName} ${lastName}`;
       if (summaryAddressStreet) summaryAddressStreet.innerText = address;
       if (summaryAddressCity) summaryAddressCity.innerText = `${postalCode} ${city}`;
-      if (summaryAddressPhone) summaryAddressPhone.innerText = `Téléphone : ${phone}`;
+      if (summaryAddressPhone) summaryAddressPhone.innerText = phone ? `Téléphone : ${phone}` : 'Non renseigné';
 
       // 3. Charger les options de livraison pour l'étape 3
       await fetchShippingOptions();
@@ -1280,8 +1335,10 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     if (successShippingStreet) successShippingStreet.innerText = addr.address_1;
     if (successShippingCity) successShippingCity.innerText = `${addr.postal_code} ${addr.city}`;
     
-    if (successShippingEmail) successShippingEmail.innerText = order.email;
-    if (successShippingPhone) successShippingPhone.innerText = addr.phone || '';
+    if (successShippingEmail) {
+      successShippingEmail.innerText = order.email.includes('retrait-physique-') ? 'Non renseigné' : order.email;
+    }
+    if (successShippingPhone) successShippingPhone.innerText = addr.phone || 'Non renseigné';
 
     // Ajuster l'affichage des informations de suivi/retrait
     const successPickupInfo = document.getElementById('success-pickup-info');
