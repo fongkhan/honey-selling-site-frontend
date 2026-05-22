@@ -333,8 +333,34 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
               </div>
             </div>
 
+            <!-- Conteneur Retrait en main propre (Masqué par défaut) -->
+            <div id="local-pickup-panel" class="hidden bg-stone-50 border border-stone-200 rounded-2xl p-6 space-y-4 text-sm leading-relaxed text-stone-700 shadow-inner">
+              <div class="flex items-center gap-3 border-b border-stone-200 pb-3 text-amber-900">
+                <span class="text-2xl" aria-hidden="true">🤝</span>
+                <div>
+                  <h4 class="font-bold text-amber-950 font-display">Paiement de la main à la main</h4>
+                  <p class="text-xs text-amber-800/80">Retrait physique & dépôts-vente</p>
+                </div>
+              </div>
+              <p>
+                Puisque vous résidez à <strong>Paris ou Montrouge</strong>, vous êtes éligible au retrait en main propre. Aucun paiement par carte bancaire n'est requis aujourd'hui.
+              </p>
+              <p class="bg-amber-50/50 p-4 rounded-xl border border-amber-500/10 text-amber-950 font-medium">
+                💡 <strong>Comment procéder ?</strong>
+                <br/>
+                1. Cliquez sur le bouton "Réserver et Finaliser" ci-dessous.
+                <br/>
+                2. Votre commande de miels d'exception est immédiatement enregistrée et réservée.
+                <br/>
+                3. Nous vous recontactons sous 24h par téléphone ou email pour organiser le rendez-vous physique de remise et de paiement.
+              </p>
+              <div class="text-xs text-stone-400">
+                Contact direct : <a href="tel:+33600000000" class="text-amber-800 font-bold hover:underline">06 00 00 00 00</a> ou <a href="mailto:contact@lamiellerieroyale.fr" class="text-amber-800 font-bold hover:underline">contact@lamiellerieroyale.fr</a>
+              </div>
+            </div>
+
             <!-- Conditions d'utilisation -->
-            <p class="text-xs text-stone-550 leading-relaxed">
+            <p class="text-xs text-stone-550 leading-relaxed" id="step-4-terms-text">
               En clicking sur le bouton ci-dessous, vous acceptez que votre commande de miels d'exception soit préparée par notre miellerie. Votre transaction est cryptée et sécurisée par la passerelle de paiement **Stripe**.
             </p>
 
@@ -454,12 +480,27 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
       </div>
 
       <!-- Information de livraison -->
-      <div class="bg-amber-50/40 border border-amber-900/5 rounded-2xl p-5 text-left text-sm flex gap-4">
+      <div id="success-delivery-tracking-info" class="bg-amber-50/40 border border-amber-900/5 rounded-2xl p-5 text-left text-sm flex gap-4">
         <span class="text-2xl mt-0.5">🚚</span>
         <div>
           <h4 class="font-bold text-amber-950 mb-0.5">Suivi de votre colis</h4>
           <p class="text-stone-650 leading-relaxed text-xs">
             Nos apiculteurs préparent votre colis avec soin. Il sera expédié dans les 24 à 48 heures. Un email contenant vos informations de suivi postal vous sera envoyé à l'adresse fournie dès la remise du colis au transporteur.
+          </p>
+        </div>
+      </div>
+
+      <!-- Information de retrait / dépôt-vente (Masqué par défaut) -->
+      <div id="success-pickup-info" class="hidden bg-amber-50/40 border border-amber-900/5 rounded-2xl p-5 text-left text-sm flex gap-4 animate-fade-in">
+        <span class="text-2xl mt-0.5">🤝</span>
+        <div>
+          <h4 class="font-bold text-amber-950 mb-0.5">Retrait en main propre & Dépôt-vente</h4>
+          <p class="text-stone-650 leading-relaxed text-xs font-medium">
+            Votre commande a été réservée avec succès ! Puisque vous êtes à proximité de Montrouge ou Paris, nous vous invitons à nous contacter dès à présent pour convenir d'un rendez-vous pour la remise de vos miels, ou pour passer les récupérer dans notre point de dépôt partenaire.
+            <br/><br/>
+            <strong>Téléphone :</strong> <a href="tel:+33600000000" class="text-amber-800 font-bold hover:underline">06 00 00 00 00</a>
+            <br/>
+            <strong>Email :</strong> <a href="mailto:contact@lamiellerieroyale.fr" class="text-amber-800 font-bold hover:underline">contact@lamiellerieroyale.fr</a>
           </p>
         </div>
       </div>
@@ -503,6 +544,8 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
   let cartId = localStorage.getItem('medusa_cart_id');
   let currentCart: any = null;
   let activeStep = 1;
+  let availableStandardOptions: any[] = [];
+  let isLocalPickupSelected = false;
 
   // Stripe Elements state
   let stripeInstance: any = null;
@@ -597,6 +640,19 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
   // Formatage de prix (Medusa v2 utilise directement l'unité principale)
   function formatPrice(amount: number) {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+  }
+
+  // Vérifier l'éligibilité géographique au retrait en main propre (Paris / Montrouge)
+  function isLocalDeliveryEligible() {
+    if (!currentCart || !currentCart.shipping_address) return false;
+    const addr = currentCart.shipping_address;
+    const city = (addr.city || '').trim().toLowerCase();
+    const postalCode = (addr.postal_code || '').trim().toLowerCase();
+
+    const isParis = postalCode.startsWith('75') || city.includes('paris');
+    const isMontrouge = postalCode.startsWith('92120') || city.includes('montrouge');
+
+    return isParis || isMontrouge;
   }
 
   // Appels API Medusa Store robuste (avec gestion d'erreur réseau / serveur down)
@@ -873,7 +929,51 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     stripePaymentWrapper.classList.add('hidden');
     step4ErrorPanel.classList.add('hidden');
 
+    const localPickupPanel = document.getElementById('local-pickup-panel');
+    const termsText = document.getElementById('step-4-terms-text');
+    
+    if (localPickupPanel) {
+      if (isLocalPickupSelected) {
+        localPickupPanel.classList.remove('hidden');
+      } else {
+        localPickupPanel.classList.add('hidden');
+      }
+    }
+
+    if (termsText) {
+      if (isLocalPickupSelected) {
+        termsText.innerHTML = "En cliquant sur le bouton ci-dessous, vous validez votre réservation. Vous vous engagez à régler le montant de votre commande directement lors de la remise en main propre (espèces ou virement instantané).";
+      } else {
+        termsText.innerHTML = "En clicking sur le bouton ci-dessous, vous acceptez que votre commande de miels d'exception soit préparée par notre miellerie. Votre transaction est cryptée et sécurisée par la passerelle de paiement **Stripe**.";
+      }
+    }
+
+    if (submitFinalBtn) {
+      const span = submitFinalBtn.querySelector('span');
+      if (span) {
+        span.innerText = isLocalPickupSelected ? "Réserver et Finaliser ma commande" : "Valider et Régler ma commande";
+      }
+    }
+
     try {
+      // 2. Créer la Collection de Paiement (indispensable pour Medusa v2)
+      const collectionRes = await storeFetch('/payment-collections', {
+        method: 'POST',
+        body: JSON.stringify({ cart_id: cartId })
+      });
+      const paymentCollectionId = collectionRes.payment_collection.id;
+
+      if (isLocalPickupSelected) {
+        // 3. Initialiser la session de paiement avec le provider manuel par défaut 'pp_system_default'
+        await storeFetch(`/payment-collections/${paymentCollectionId}/payment-sessions`, {
+          method: 'POST',
+          body: JSON.stringify({ provider_id: 'pp_system_default' })
+        });
+
+        stripeLoading.classList.add('hidden');
+        return;
+      }
+
       // S'assurer que le script Stripe est chargé et globalement disponible
       if (!(window as any).Stripe) {
         throw new Error("Le SDK Stripe n'a pas pu être chargé. Veuillez vérifier votre connexion.");
@@ -883,13 +983,6 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
       if (!stripeInstance) {
         stripeInstance = (window as any).Stripe(stripePublicKey);
       }
-
-      // 2. Créer la Collection de Paiement (indispensable pour Medusa v2)
-      const collectionRes = await storeFetch('/payment-collections', {
-        method: 'POST',
-        body: JSON.stringify({ cart_id: cartId })
-      });
-      const paymentCollectionId = collectionRes.payment_collection.id;
 
       // 3. Initialiser la session de paiement avec le provider 'pp_stripe_stripe'
       const sessionRes = await storeFetch(`/payment-collections/${paymentCollectionId}/payment-sessions`, {
@@ -1079,9 +1172,9 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
 
     try {
       const data = await storeFetch(`/shipping-options?cart_id=${cartId}`);
-      const options = data.shipping_options;
+      availableStandardOptions = data.shipping_options || [];
 
-      if (!options || options.length === 0) {
+      if (availableStandardOptions.length === 0) {
         shippingOptionsList.innerHTML = `
           <div class="p-4 bg-red-50 border border-red-100 rounded-2xl text-xs text-red-700">
             Aucun mode de livraison n'est configuré pour cette adresse. Veuillez modifier vos coordonnées.
@@ -1091,27 +1184,59 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
         return;
       }
 
-      // Dessiner les boutons radios des options
-      shippingOptionsList.innerHTML = options.map((opt: any, index: number) => `
-        <label class="flex items-start gap-4 bg-white hover:bg-amber-50/10 p-5 rounded-2xl border ${index === 0 ? 'border-amber-500 bg-amber-50/20' : 'border-stone-200'} hover:border-amber-500/50 transition-all duration-300 cursor-pointer shadow-sm relative shipping-option-label" data-id="${opt.id}">
-          <input 
-            type="radio" 
-            name="shipping_option" 
-            value="${opt.id}" 
-            class="mt-1 accent-amber-600 shipping-option-radio"
-            ${index === 0 ? 'checked' : ''}
-            data-name="${opt.name}"
-            data-amount="${opt.calculated_price?.calculated_amount ?? 0}"
-          />
-          <div class="flex-grow min-w-0 -mt-0.5">
-            <div class="flex items-center justify-between gap-2">
-              <h4 class="text-sm font-bold text-amber-950">${opt.name}</h4>
-              <span class="text-sm font-extrabold text-amber-900">${opt.calculated_price?.calculated_amount === 0 ? 'Offert' : formatPrice(opt.calculated_price?.calculated_amount ?? 0)}</span>
+      const isEligible = isLocalDeliveryEligible();
+      let localOptionHtml = '';
+      if (isEligible) {
+        localOptionHtml = `
+          <label class="flex items-start gap-4 bg-white hover:bg-amber-50/10 p-5 rounded-2xl border border-amber-500 bg-amber-50/20 hover:border-amber-500/50 transition-all duration-300 cursor-pointer shadow-sm relative shipping-option-label animate-fade-in" data-id="so_local_pickup">
+            <input 
+              type="radio" 
+              name="shipping_option" 
+              value="so_local_pickup" 
+              class="mt-1 accent-amber-600 shipping-option-radio"
+              checked
+              data-name="Retrait en main propre (Paris & Montrouge)"
+              data-amount="0"
+            />
+            <div class="flex-grow min-w-0 -mt-0.5">
+              <div class="flex items-center justify-between gap-2">
+                <h4 class="text-sm font-bold text-amber-950 flex items-center gap-1.5">
+                  <span>🤝</span>
+                  <span>Retrait en main propre & Dépôt-vente</span>
+                </h4>
+                <span class="text-sm font-extrabold text-amber-900">Offert</span>
+              </div>
+              <p class="text-xs text-amber-800 mt-1">Réservé aux alentours de Paris et Montrouge. Remise physique contre paiement en espèces ou virement.</p>
             </div>
-            <p class="text-xs text-stone-400 mt-1">${opt.type?.description || 'Livraison standard à domicile'}</p>
-          </div>
-        </label>
-      `).join('');
+          </label>
+        `;
+      }
+
+      const standardOptionsHtml = availableStandardOptions.map((opt: any, index: number) => {
+        const isChecked = !isEligible && index === 0;
+        return `
+          <label class="flex items-start gap-4 bg-white hover:bg-amber-50/10 p-5 rounded-2xl border ${isChecked ? 'border-amber-500 bg-amber-50/20' : 'border-stone-200'} hover:border-amber-500/50 transition-all duration-300 cursor-pointer shadow-sm relative shipping-option-label" data-id="${opt.id}">
+            <input 
+              type="radio" 
+              name="shipping_option" 
+              value="${opt.id}" 
+              class="mt-1 accent-amber-600 shipping-option-radio"
+              ${isChecked ? 'checked' : ''}
+              data-name="${opt.name}"
+              data-amount="${opt.calculated_price?.calculated_amount ?? 0}"
+            />
+            <div class="flex-grow min-w-0 -mt-0.5">
+              <div class="flex items-center justify-between gap-2">
+                <h4 class="text-sm font-bold text-amber-950">${opt.name}</h4>
+                <span class="text-sm font-extrabold text-amber-900">${opt.calculated_price?.calculated_amount === 0 ? 'Offert' : formatPrice(opt.calculated_price?.calculated_amount ?? 0)}</span>
+              </div>
+              <p class="text-xs text-stone-400 mt-1">${opt.type?.description || 'Livraison standard à domicile'}</p>
+            </div>
+          </label>
+        `;
+      }).join('');
+
+      shippingOptionsList.innerHTML = localOptionHtml + standardOptionsHtml;
 
       // Câbler le changement de sélection pour effet visuel de bordure
       const radios = document.querySelectorAll('.shipping-option-radio');
@@ -1156,8 +1281,11 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     }
 
     const optionId = selectedRadio.value;
-    const name = selectedRadio.dataset.name || 'Livraison';
-    const amount = parseInt(selectedRadio.dataset.amount || '0');
+    const isLocal = optionId === 'so_local_pickup';
+    isLocalPickupSelected = isLocal;
+
+    const name = isLocal ? 'Retrait en main propre & Dépôt-vente' : (selectedRadio.dataset.name || 'Livraison');
+    const amount = isLocal ? 0 : parseInt(selectedRadio.dataset.amount || '0');
 
     // Loader
     const origBtnText = submitStep3Btn.innerHTML;
@@ -1165,16 +1293,24 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     submitStep3Btn.setAttribute('disabled', 'true');
 
     try {
+      let optionIdToApply = optionId;
+      if (isLocal) {
+        if (availableStandardOptions.length === 0) {
+          throw new Error("Aucune option de livraison standard disponible pour valider le panier Medusa.");
+        }
+        optionIdToApply = availableStandardOptions[0].id;
+      }
+
       // Assigner la livraison sur Medusa
       const data = await storeFetch(`/carts/${cartId}/shipping-methods`, {
         method: 'POST',
-        body: JSON.stringify({ option_id: optionId })
+        body: JSON.stringify({ option_id: optionIdToApply })
       });
       currentCart = data.cart;
 
       // Résumé de la livraison
       if (summaryShippingName) summaryShippingName.innerText = name;
-      if (summaryShippingPrice) summaryShippingPrice.innerText = amount === 0 ? 'Offert' : formatPrice(amount);
+      if (summaryShippingPrice) summaryShippingPrice.innerText = isLocal || amount === 0 ? 'Offert' : formatPrice(amount);
 
       // Mettre à jour l'affichage des totaux
       updateSummaryUI();
@@ -1199,13 +1335,13 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     }
   });
 
-  // ÉTAPE 4 : Validation finale du paiement (COMPLETE DU CHECKOUT AVEC STRIPE)
+  // ÉTAPE 4 : Validation finale du paiement (COMPLETE DU CHECKOUT AVEC STRIPE OU RETRAIT LOCAL)
   submitFinalBtn?.addEventListener('click', async () => {
     // Réinitialiser les erreurs
     step4ErrorPanel?.classList.add('hidden');
 
-    // S'assurer que Stripe est bien initialisé et qu'on a le client secret
-    if (!stripeInstance || !cardElementInstance || !elementsInstance || !stripeClientSecret) {
+    // S'assurer que Stripe est bien initialisé et qu'on a le client secret (seulement en mode standard)
+    if (!isLocalPickupSelected && (!stripeInstance || !cardElementInstance || !elementsInstance || !stripeClientSecret)) {
       if (step4ErrorPanel && step4ErrorText) {
         step4ErrorText.innerText = "Le service de paiement Stripe n'a pas été initialisé correctement. Veuillez rafraîchir la page et réessayer.";
         step4ErrorPanel.classList.remove('hidden');
@@ -1217,12 +1353,40 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     // Loader sur le bouton final
     submitFinalBtn.setAttribute('disabled', 'true');
     const origBtnContent = submitFinalBtn.innerHTML;
-    submitFinalBtn.innerHTML = `
+    submitFinalBtn.innerHTML = isLocalPickupSelected ? `
+      <span>Réservation de votre commande...</span>
+      <div class="h-5 w-5 border-2 border-stone-900 border-t-transparent animate-spin rounded-full"></div>
+    ` : `
       <span>Paiement sécurisé en cours...</span>
       <div class="h-5 w-5 border-2 border-amber-950 border-t-transparent animate-spin rounded-full"></div>
     `;
 
     try {
+      if (isLocalPickupSelected) {
+        // Mode Retrait physique : finalisation directe du panier Medusa v2
+        const completeRes = await storeFetch(`/carts/${cartId}/complete`, {
+          method: 'POST'
+        });
+
+        if (completeRes.type === 'order' && completeRes.order) {
+          const order = completeRes.order;
+          
+          // Nettoyer localement le panier
+          localStorage.removeItem('medusa_cart_id');
+          cartId = null;
+
+          // Déclencher un événement global pour mettre à jour les compteurs du panier
+          window.dispatchEvent(new Event('cart-updated'));
+
+          // Afficher l'écran de succès premium
+          showSuccessState(order);
+
+        } else {
+          throw new Error('La finalisation du panier n\'a pas retourné de commande dans Medusa.');
+        }
+        return;
+      }
+
       // 1. Confirmer le paiement avec Stripe Elements (Payment Element)
       const confirmRes = await stripeInstance.confirmPayment({
         elements: elementsInstance,
@@ -1304,7 +1468,9 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     successContainer?.classList.remove('hidden');
 
     if (successOrderId) successOrderId.innerText = order.id;
-    if (successOrderTotal) successOrderTotal.innerText = formatPrice(order.total);
+    if (successOrderTotal) {
+      successOrderTotal.innerText = isLocalPickupSelected ? formatPrice(currentCart?.subtotal || order.total) : formatPrice(order.total);
+    }
 
     const addr = order.shipping_address;
     if (successShippingName) successShippingName.innerText = `${addr.first_name} ${addr.last_name}`;
@@ -1313,6 +1479,18 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     
     if (successShippingEmail) successShippingEmail.innerText = order.email;
     if (successShippingPhone) successShippingPhone.innerText = addr.phone || '';
+
+    // Ajuster l'affichage des informations de suivi/retrait
+    const successPickupInfo = document.getElementById('success-pickup-info');
+    const successDeliveryTrackingInfo = document.getElementById('success-delivery-tracking-info');
+    
+    if (isLocalPickupSelected) {
+      successPickupInfo?.classList.remove('hidden');
+      successDeliveryTrackingInfo?.classList.add('hidden');
+    } else {
+      successPickupInfo?.classList.add('hidden');
+      successDeliveryTrackingInfo?.classList.remove('hidden');
+    }
 
     // Scroll au sommet
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1350,7 +1528,10 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     if (summarySubtotal) summarySubtotal.innerText = formatPrice(currentCart.subtotal);
     
     if (summaryShipping) {
-      if (currentCart.shipping_methods && currentCart.shipping_methods.length > 0) {
+      if (isLocalPickupSelected) {
+        summaryShipping.innerText = "Offert";
+        summaryShipping.className = "text-amber-700 font-semibold";
+      } else if (currentCart.shipping_methods && currentCart.shipping_methods.length > 0) {
         const cost = currentCart.shipping_methods[0].amount;
         summaryShipping.innerText = cost === 0 ? 'Offert' : formatPrice(cost);
         summaryShipping.className = "text-amber-700 font-semibold";
@@ -1360,7 +1541,9 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
       }
     }
 
-    if (summaryTotal) summaryTotal.innerText = formatPrice(currentCart.total);
+    if (summaryTotal) {
+      summaryTotal.innerText = isLocalPickupSelected ? formatPrice(currentCart.subtotal) : formatPrice(currentCart.total);
+    }
   }
 
   // Lancement

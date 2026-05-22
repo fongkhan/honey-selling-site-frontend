@@ -7,6 +7,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — versioning:
 ## [Unreleased]
 
 ### Added
+- Option de **Retrait en main propre & Dépôt-vente** pour les résidents de **Paris** (code postal commençant par `75` ou ville contenant "paris") et **Montrouge** (code postal `92120` ou ville contenant "montrouge"), intégrée dynamiquement à l'Étape 3 du checkout.
+- Système de **Paiement de la main à la main (espèces / virement physique)** pour le retrait local, masquant le formulaire Stripe Elements à l'Étape 4 et affichant à la place un panneau de réservation premium transparent avec les coordonnées directes de contact.
+- Finalisation directe du panier Medusa v2 (`POST /carts/:id/complete`) sans passer par Stripe lors de la sélection du retrait local, en associant de manière transparente un mode d'expédition standard par défaut pour satisfaire les contraintes du backend Medusa tout en affichant un coût d'expédition nul à l'acheteur.
+- Écran de succès personnalisé pour le retrait local, masquant le suivi de colis Colissimo standard pour afficher à la place les instructions et coordonnées de contact (Téléphone: `06 00 00 00 00`, Email: `contact@lamiellerieroyale.fr`) afin de fixer le rendez-vous.
 - Rendu dynamique des photos de produits sur tout le site (page d'accueil, catalogue de la boutique, et fiches produits) avec fallback automatique sur la première image de la galerie de Medusa si le thumbnail n'est pas renseigné, évitant ainsi l'émoji de repli par défaut 🍯 lorsque des photos existent.
 - Données Structurées JSON-LD intégrées à la volée dans le `<head>` de la mise en page générale (`Layout.astro`) de type `Store`, et sur les fiches produits (`boutique/[handle]` et `produits/[handle]`) de type `Product` pour une indexation sémantique (SEO) optimale.
 - Cartes de produits de la page d'accueil cliquables : enveloppement du visuel pot de miel 🍯 et du titre `h3` dans des balises `<a>` pointant vers `/boutique/[handle]` (dans le bloc CMS et le repli HTML).
