@@ -341,7 +341,7 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
                   <p class="text-xs text-amber-800/80">Retrait physique & dépôts-vente</p>
                 </div>
               </div>
-              <p>
+              <p id="local-pickup-text">
                 Puisque vous résidez à <strong>Paris ou Clamart</strong>, vous êtes éligible au retrait en main propre. Aucun paiement en ligne n'est requis aujourd'hui.
               </p>
               <p class="bg-amber-50/50 p-4 rounded-xl border border-amber-500/10 text-amber-950 font-medium">
@@ -495,7 +495,7 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
         <span class="text-2xl mt-0.5">🤝</span>
         <div>
           <h4 class="font-bold text-amber-950 mb-0.5">Retrait en main propre & Dépôt-vente</h4>
-          <p class="text-stone-650 leading-relaxed text-xs font-medium">
+          <p id="success-pickup-text" class="text-stone-650 leading-relaxed text-xs font-medium">
             Votre commande a été réservée avec succès ! Puisque vous êtes à proximité de Clamart ou Paris, nous vous invitons à nous contacter dès à présent pour convenir d'un rendez-vous pour la remise de vos miels, ou pour passer les récupérer dans notre point de dépôt partenaire.
             <br/><br/>
             <strong>Téléphone :</strong> <a href="tel:+33600000000" class="text-amber-800 font-bold hover:underline">06 00 00 00 00</a>
@@ -917,6 +917,20 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     // Initialisation du paiement Stripe à l'étape 4
     if (stepNum === 4) {
       initStripePayment();
+
+      const pickupTextEl = document.getElementById('local-pickup-text');
+      if (pickupTextEl) {
+        const postalCode = postalCodeInput.value.trim();
+        const city = cityInput.value.trim();
+        const isParis = postalCode.startsWith('75') || city.toLowerCase().includes('paris');
+        const isClamart = postalCode.startsWith('92140') || city.toLowerCase().includes('clamart');
+
+        if (isParis || isClamart) {
+          pickupTextEl.innerHTML = `Puisque vous résidez à <strong>Paris ou Clamart</strong>, vous êtes éligible au retrait en main propre. Aucun paiement en ligne n'est requis aujourd'hui.`;
+        } else {
+          pickupTextEl.innerHTML = `Puisque vous êtes proche d'un de nos dépôts-vente partenaires ou prêt à vous déplacer à Clamart, vous êtes éligible au retrait en main propre. Aucun paiement en ligne n'est requis aujourd'hui.`;
+        }
+      }
     }
   }
 
@@ -1347,6 +1361,32 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     if (isLocalPickupSelected) {
       successPickupInfo?.classList.remove('hidden');
       successDeliveryTrackingInfo?.classList.add('hidden');
+
+      const successPickupText = document.getElementById('success-pickup-text');
+      if (successPickupText && addr) {
+        const postalCode = (addr.postal_code || '').trim();
+        const city = (addr.city || '').trim().toLowerCase();
+        const isParis = postalCode.startsWith('75') || city.includes('paris');
+        const isClamart = postalCode.startsWith('92140') || city.includes('clamart');
+
+        if (isParis || isClamart) {
+          successPickupText.innerHTML = `
+            Votre commande a été réservée avec succès ! Puisque vous êtes à proximité de Clamart ou Paris, nous vous invitons à nous contacter dès à présent pour convenir d'un rendez-vous pour la remise de vos miels, ou pour passer les récupérer dans notre point de dépôt partenaire.
+            <br/><br/>
+            <strong>Téléphone :</strong> <a href="tel:+33600000000" class="text-amber-800 font-bold hover:underline">06 00 00 00 00</a>
+            <br/>
+            <strong>Email :</strong> <a href="mailto:contact@lamiellerieroyale.fr" class="text-amber-800 font-bold hover:underline">contact@lamiellerieroyale.fr</a>
+          `;
+        } else {
+          successPickupText.innerHTML = `
+            Votre commande a été réservée avec succès ! Puisque vous vous êtes engagé à vous déplacer dans l'un de nos dépôts-vente partenaires ou à Clamart, nous vous invitons à nous contacter dès à présent pour organiser le retrait de vos miels.
+            <br/><br/>
+            <strong>Téléphone :</strong> <a href="tel:+33600000000" class="text-amber-800 font-bold hover:underline">06 00 00 00 00</a>
+            <br/>
+            <strong>Email :</strong> <a href="mailto:contact@lamiellerieroyale.fr" class="text-amber-800 font-bold hover:underline">contact@lamiellerieroyale.fr</a>
+          `;
+        }
+      }
     } else {
       successPickupInfo?.classList.add('hidden');
       successDeliveryTrackingInfo?.classList.remove('hidden');
