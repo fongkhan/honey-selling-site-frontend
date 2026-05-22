@@ -84,9 +84,11 @@ frontend/
 ## Fonctionnalités Avancées
 
 1. **Checkout en 4 étapes (`/commande`)** :
-   Un accordéon de commande fluide qui guide le client à travers les étapes de saisie de contact, d'adresse de livraison, de choix des modes de livraison et de règlement sécurisé via **Stripe Payment Element**. Ce module intègre le support de **Google Pay** et des cartes bancaires de manière fluide et sécurisée (avec exclusion d'Apple Pay), prenant en charge les paiements directs inline (via `redirect: 'if_required'`) et les redirections sécurisées (comme 3D Secure) de manière résiliente.
-   
-   - **Retrait en main propre & Paiement physique** : Pour les clients éligibles (alentours de **Montrouge** et **Paris**), le système propose automatiquement à l'étape 3 le retrait gratuit en main propre ("Retrait en main propre & Dépôt-vente"). Si sélectionné, l'étape 4 masque Stripe pour afficher un panneau de consignes de réservation avec paiement en physique, bypassant le module Stripe lors du clic sur "Réserver et Finaliser" pour compléter la commande directement via la session manuelle par défaut de Medusa (`pp_system_default`). L'écran de succès s'adapte alors pour afficher les coordonnées de contact direct (téléphone et email) de la miellerie au lieu du suivi postal standard.
+   Un accordéon de commande fluide qui guide le client à travers les étapes de contact, d'adresse, de livraison et de réservation :
+   - **Éligibilité Géographique Stricte (Étape 2)** : Le checkout est restreint exclusivement aux résidents de **Paris** (75xxx) et **Clamart** (92140). Toute saisie en dehors de ces secteurs affiche un panneau d'avertissement élégant bloquant la validation pour privilégier la vente directe locale.
+   - **Retrait en main propre & Dépôt-vente (Étape 3)** : Le système propose uniquement l'option gratuite "Retrait en main propre & Dépôt-vente" à 0,00 €, masquant les modes d'expédition postaux standards obsolètes.
+   - **Paiement 100% Physique (Étape 4)** : Aucun paiement en ligne ou empreinte de carte bancaire n'est requis ni proposé. Les scripts Stripe ont été entièrement désactivés et le tunnel affiche une carte de réservation transparente premium invitant l'acheteur à finaliser sa réservation de miel en main propre. Le panier Medusa v2 est finalisé directement via la session système manuelle (`pp_system_default`).
+   - **Écran de Succès Adapté** : L'écran final confirme la réservation et affiche en évidence les instructions et coordonnées directes de la miellerie (téléphone, email) afin de planifier le rendez-vous ou le retrait dans l'un des dépôts-vente partenaires.
 
 2. **Navbar Auto-Adaptative** :
    La barre de navigation se synchronise automatiquement avec les pages créées et configurées dans Payload CMS. Elle filtre la page d'accueil et la boutique pour n'afficher que vos pages institutionnelles (comme "Notre Histoire") triées selon l'ordre défini.

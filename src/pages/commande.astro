@@ -7,8 +7,8 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
 ---
 
 <Layout title="Finaliser ma commande">
-  <!-- Stripe JS SDK Injection -->
-  <script src="https://js.stripe.com/v3/" is:inline></script>
+  <!-- Stripe JS SDK Injection (Désactivé car paiement 100% physique) -->
+  <!-- <script src="https://js.stripe.com/v3/" is:inline></script> -->
   <div id="stripe-config" data-stripe-key={PUBLIC_STRIPE_KEY} class="hidden"></div>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
     <!-- Fil d'Ariane élégant -->
@@ -297,44 +297,19 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
         </div>
 
         <!-- ÉTAPE 4 : PAIEMENT SÉCURISÉ & VALIDATION -->
+        <!-- ÉTAPE 4 : RÉSERVATION & VALIDATION DE LA COMMANDE -->
         <div class="bg-white border border-amber-900/5 rounded-3xl p-6 md:p-8 shadow-sm transition-all duration-300 opacity-50 pointer-events-none relative overflow-hidden" id="step-4-card" aria-labelledby="step-4-title" role="region" aria-disabled="true">
           <div class="absolute top-0 right-0 h-2 w-full bg-stone-100" id="step-4-progress-bar"></div>
           
           <div class="flex items-center gap-4 mb-6">
             <span class="h-8 w-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center font-bold text-sm" id="step-4-num" aria-hidden="true">4</span>
-            <h3 class="font-display text-xl font-bold text-stone-400 transition-colors" id="step-4-title">Méthode de paiement</h3>
+            <h3 class="font-display text-xl font-bold text-stone-400 transition-colors" id="step-4-title">Réservation de ma commande</h3>
           </div>
 
-          <!-- Paiement Stripe -->
           <div id="step-4-form-container" class="hidden space-y-6">
             
-            <!-- Spinner / Chargement Stripe -->
-            <div id="stripe-loading" class="flex flex-col items-center justify-center p-8 bg-stone-50 border border-stone-100 rounded-2xl space-y-3 animate-pulse">
-              <div class="h-6 w-6 border-2 border-amber-600 border-t-transparent animate-spin rounded-full"></div>
-              <p class="text-xs text-stone-500 font-medium">Chargement du paiement sécurisé Stripe...</p>
-            </div>
-
-            <!-- Conteneur Stripe Elements -->
-            <div id="stripe-payment-wrapper" class="hidden space-y-4">
-              <label class="block text-xs font-bold text-amber-950 uppercase tracking-wider mb-1">Carte Bancaire</label>
-              
-              <div id="stripe-card-element" class="p-4 bg-stone-50 border border-stone-200 rounded-2xl focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-amber-600 transition-all duration-300">
-                <!-- Rendu sécurisé par Stripe -->
-              </div>
-
-              <div class="flex items-center justify-between text-xs text-stone-400 mt-2 px-1">
-                <div class="flex items-center gap-1.5">
-                  <span aria-hidden="true">🔒</span>
-                  <span>Paiement 100% sécurisé (SSL)</span>
-                </div>
-                <div class="flex gap-2" aria-hidden="true">
-                  <span class="text-base grayscale opacity-65">💳 Visa / Mastercard</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Conteneur Retrait en main propre (Masqué par défaut) -->
-            <div id="local-pickup-panel" class="hidden bg-stone-50 border border-stone-200 rounded-2xl p-6 space-y-4 text-sm leading-relaxed text-stone-700 shadow-inner">
+            <!-- Conteneur Retrait en main propre -->
+            <div id="local-pickup-panel" class="bg-stone-50 border border-stone-200 rounded-2xl p-6 space-y-4 text-sm leading-relaxed text-stone-700 shadow-inner">
               <div class="flex items-center gap-3 border-b border-stone-200 pb-3 text-amber-900">
                 <span class="text-2xl" aria-hidden="true">🤝</span>
                 <div>
@@ -343,16 +318,16 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
                 </div>
               </div>
               <p>
-                Puisque vous résidez à <strong>Paris ou Montrouge</strong>, vous êtes éligible au retrait en main propre. Aucun paiement par carte bancaire n'est requis aujourd'hui.
+                Puisque vous résidez à <strong>Paris ou Clamart</strong>, vous êtes éligible au retrait en main propre. Aucun paiement en ligne n'est requis aujourd'hui.
               </p>
               <p class="bg-amber-50/50 p-4 rounded-xl border border-amber-500/10 text-amber-950 font-medium">
                 💡 <strong>Comment procéder ?</strong>
                 <br/>
                 1. Cliquez sur le bouton "Réserver et Finaliser" ci-dessous.
                 <br/>
-                2. Votre commande de miels d'exception est immédiatement enregistrée et réservée.
+                2. Votre commande de miels d'exception est immédiatement enregistrée et réservée dans nos stocks.
                 <br/>
-                3. Nous vous recontactons sous 24h par téléphone ou email pour organiser le rendez-vous physique de remise et de paiement.
+                3. Nous vous recontactons sous 24h par téléphone ou email pour convenir d'un rendez-vous pour la remise de vos miels, ou pour passer les récupérer dans l'un de nos dépôts-vente partenaires.
               </p>
               <div class="text-xs text-stone-400">
                 Contact direct : <a href="tel:+33600000000" class="text-amber-800 font-bold hover:underline">06 00 00 00 00</a> ou <a href="mailto:contact@lamiellerieroyale.fr" class="text-amber-800 font-bold hover:underline">contact@lamiellerieroyale.fr</a>
@@ -361,14 +336,14 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
 
             <!-- Conditions d'utilisation -->
             <p class="text-xs text-stone-550 leading-relaxed" id="step-4-terms-text">
-              En clicking sur le bouton ci-dessous, vous acceptez que votre commande de miels d'exception soit préparée par notre miellerie. Votre transaction est cryptée et sécurisée par la passerelle de paiement **Stripe**.
+              En cliquant sur le bouton ci-dessous, vous validez votre réservation. Vous vous engagez à régler le montant de votre commande directement lors de la remise en main propre (espèces ou virement instantané).
             </p>
 
             <!-- Panneau d'erreur d'étape 4 (Masqué par défaut) -->
             <div id="step-4-error-panel" class="hidden p-4 bg-red-50 border border-red-200 text-red-800 rounded-2xl text-xs sm:text-sm font-medium flex items-start gap-2.5 mb-2 animate-fade-in" role="alert" aria-live="assertive">
               <span class="text-base" aria-hidden="true">⚠️</span>
               <div class="flex-grow">
-                <p id="step-4-error-text">Une erreur réseau inattendue est survenue lors de la finalisation du paiement. Veuillez réessayer.</p>
+                <p id="step-4-error-text">Une erreur réseau inattendue est survenue lors de la finalisation. Veuillez réessayer.</p>
               </div>
             </div>
 
@@ -378,12 +353,13 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
               type="button"
               class="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-stone-900 rounded-full font-bold text-center transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-3 text-base focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus:outline-none"
             >
-              <span class="whitespace-nowrap">Valider et Régler ma commande</span>
+              <span class="whitespace-nowrap">Réserver et Finaliser ma commande</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="h-5 w-5 flex-shrink-0 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </button>
           </div>
+        </div>
         </div>
 
       </div>
@@ -496,7 +472,7 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
         <div>
           <h4 class="font-bold text-amber-950 mb-0.5">Retrait en main propre & Dépôt-vente</h4>
           <p class="text-stone-650 leading-relaxed text-xs font-medium">
-            Votre commande a été réservée avec succès ! Puisque vous êtes à proximité de Montrouge ou Paris, nous vous invitons à nous contacter dès à présent pour convenir d'un rendez-vous pour la remise de vos miels, ou pour passer les récupérer dans notre point de dépôt partenaire.
+            Votre commande a été réservée avec succès ! Puisque vous êtes à proximité de Clamart ou Paris, nous vous invitons à nous contacter dès à présent pour convenir d'un rendez-vous pour la remise de vos miels, ou pour passer les récupérer dans notre point de dépôt partenaire.
             <br/><br/>
             <strong>Téléphone :</strong> <a href="tel:+33600000000" class="text-amber-800 font-bold hover:underline">06 00 00 00 00</a>
             <br/>
@@ -545,7 +521,7 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
   let currentCart: any = null;
   let activeStep = 1;
   let availableStandardOptions: any[] = [];
-  let isLocalPickupSelected = false;
+  let isLocalPickupSelected = true;
 
   // Stripe Elements state
   let stripeInstance: any = null;
@@ -642,7 +618,7 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
   }
 
-  // Vérifier l'éligibilité géographique au retrait en main propre (Paris / Montrouge)
+  // Vérifier l'éligibilité géographique au retrait en main propre (Paris / Clamart)
   function isLocalDeliveryEligible() {
     if (!currentCart || !currentCart.shipping_address) return false;
     const addr = currentCart.shipping_address;
@@ -650,9 +626,9 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     const postalCode = (addr.postal_code || '').trim().toLowerCase();
 
     const isParis = postalCode.startsWith('75') || city.includes('paris');
-    const isMontrouge = postalCode.startsWith('92120') || city.includes('montrouge');
+    const isClamart = postalCode.startsWith('92140') || city.includes('clamart');
 
-    return isParis || isMontrouge;
+    return isParis || isClamart;
   }
 
   // Appels API Medusa Store robuste (avec gestion d'erreur réseau / serveur down)
@@ -920,137 +896,38 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     }
   }
 
-  // Initialisation de la session de paiement Stripe sécurisée
+  // Initialisation de la session de paiement avec provider manuel
   async function initStripePayment() {
-    if (!stripeLoading || !stripePaymentWrapper || !step4ErrorPanel || !step4ErrorText) return;
+    if (!step4ErrorPanel || !step4ErrorText) return;
     
-    // 1. Reset visual states
-    stripeLoading.classList.remove('hidden');
-    stripePaymentWrapper.classList.add('hidden');
+    // Reset visual states
     step4ErrorPanel.classList.add('hidden');
 
-    const localPickupPanel = document.getElementById('local-pickup-panel');
-    const termsText = document.getElementById('step-4-terms-text');
-    
-    if (localPickupPanel) {
-      if (isLocalPickupSelected) {
-        localPickupPanel.classList.remove('hidden');
-      } else {
-        localPickupPanel.classList.add('hidden');
-      }
-    }
-
-    if (termsText) {
-      if (isLocalPickupSelected) {
-        termsText.innerHTML = "En cliquant sur le bouton ci-dessous, vous validez votre réservation. Vous vous engagez à régler le montant de votre commande directement lors de la remise en main propre (espèces ou virement instantané).";
-      } else {
-        termsText.innerHTML = "En clicking sur le bouton ci-dessous, vous acceptez que votre commande de miels d'exception soit préparée par notre miellerie. Votre transaction est cryptée et sécurisée par la passerelle de paiement **Stripe**.";
-      }
-    }
-
-    if (submitFinalBtn) {
-      const span = submitFinalBtn.querySelector('span');
-      if (span) {
-        span.innerText = isLocalPickupSelected ? "Réserver et Finaliser ma commande" : "Valider et Régler ma commande";
-      }
-    }
-
     try {
-      // 2. Créer la Collection de Paiement (indispensable pour Medusa v2)
+      // Créer la Collection de Paiement (indispensable pour Medusa v2)
       const collectionRes = await storeFetch('/payment-collections', {
         method: 'POST',
         body: JSON.stringify({ cart_id: cartId })
       });
       const paymentCollectionId = collectionRes.payment_collection.id;
 
-      if (isLocalPickupSelected) {
-        // 3. Initialiser la session de paiement avec le provider manuel par défaut 'pp_system_default'
-        await storeFetch(`/payment-collections/${paymentCollectionId}/payment-sessions`, {
-          method: 'POST',
-          body: JSON.stringify({ provider_id: 'pp_system_default' })
-        });
-
-        stripeLoading.classList.add('hidden');
-        return;
-      }
-
-      // S'assurer que le script Stripe est chargé et globalement disponible
-      if (!(window as any).Stripe) {
-        throw new Error("Le SDK Stripe n'a pas pu être chargé. Veuillez vérifier votre connexion.");
-      }
-
-      // Initialiser Stripe si ce n'est pas déjà fait
-      if (!stripeInstance) {
-        stripeInstance = (window as any).Stripe(stripePublicKey);
-      }
-
-      // 3. Initialiser la session de paiement avec le provider 'pp_stripe_stripe'
-      const sessionRes = await storeFetch(`/payment-collections/${paymentCollectionId}/payment-sessions`, {
+      // Initialiser la session de paiement avec le provider manuel par défaut 'pp_system_default'
+      await storeFetch(`/payment-collections/${paymentCollectionId}/payment-sessions`, {
         method: 'POST',
-        body: JSON.stringify({ provider_id: 'pp_stripe_stripe' })
+        body: JSON.stringify({ provider_id: 'pp_system_default' })
       });
 
-      // Trouver la session de paiement Stripe
-      const sessions = sessionRes.payment_collection.payment_sessions;
-      const stripeSession = sessions.find((s: any) => s.provider_id === 'pp_stripe_stripe');
-
-      if (!stripeSession || !stripeSession.data || !stripeSession.data.client_secret) {
-        throw new Error("Impossible d'obtenir la session de paiement Stripe. Vérifiez la configuration.");
-      }
-
-      stripeClientSecret = stripeSession.data.client_secret;
-
-      // 4. Instancier le formulaire Stripe Elements Payment Element (Cartes & Google Pay)
-      if (!cardElementInstance) {
-        elementsInstance = stripeInstance.elements({
-          clientSecret: stripeClientSecret,
-          appearance: {
-            theme: 'flat',
-            variables: {
-              colorPrimary: '#d97706', // amber-600
-              colorBackground: '#fafaf9', // stone-50
-              colorText: '#1c1917', // stone-900
-              colorDanger: '#dc2626', // red-600
-              fontFamily: 'Outfit, system-ui, sans-serif',
-              borderRadius: '16px',
-            }
-          }
-        });
-        
-        cardElementInstance = elementsInstance.create('payment', {
-          layout: 'accordion',
-          wallets: {
-            applePay: 'never',
-          }
-        });
-        
-        cardElementInstance.mount('#stripe-card-element');
-        
-        // Écouter les erreurs de saisie en direct
-        cardElementInstance.on('change', (event: any) => {
-          if (event.error) {
-            step4ErrorText.innerText = event.error.message;
-            step4ErrorPanel.classList.remove('hidden');
-          } else {
-            step4ErrorPanel.classList.add('hidden');
-          }
-        });
-      }
-
-      // 5. Afficher le formulaire et masquer le loader
-      stripeLoading.classList.add('hidden');
-      stripePaymentWrapper.classList.remove('hidden');
-
     } catch (err: any) {
-      console.error('Erreur initialisation Stripe', err);
-      stripeLoading.classList.add('hidden');
-      if (err.message.includes('Network') || err.message.includes('connexion')) {
-        step4ErrorText.innerText = 'Une erreur de connexion est survenue. Impossible d\'initialiser le paiement sécurisé Stripe. Veuillez vérifier votre réseau et réessayer.';
-      } else {
-        step4ErrorText.innerText = `Erreur de paiement : ${err.message || 'Impossible de charger la ruche de paiement Stripe. Veuillez contacter le support.'}`;
+      console.error('Erreur initialisation session de paiement', err);
+      if (step4ErrorPanel && step4ErrorText) {
+        if (err.message.includes('Network') || err.message.includes('connexion')) {
+          step4ErrorText.innerText = 'Une erreur de connexion est survenue. Impossible d\'initialiser votre commande. Veuillez vérifier votre réseau et réessayer.';
+        } else {
+          step4ErrorText.innerText = `Erreur : ${err.message || 'Impossible d\'enregistrer votre réservation. Veuillez contacter le support.'}`;
+        }
+        step4ErrorPanel.classList.remove('hidden');
+        step4ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-      step4ErrorPanel.classList.remove('hidden');
-      step4ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
 
@@ -1094,6 +971,31 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     if (!firstName || !lastName || !address || !postalCode || !city || !phone) {
       if (step2ErrorPanel && step2ErrorText) {
         step2ErrorText.innerText = 'Veuillez remplir tous les champs de l\'adresse de livraison.';
+        step2ErrorPanel.classList.remove('hidden');
+        step2ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    // Validation géographique stricte (Paris 75xxx ou Clamart 92140 uniquement)
+    const isParis = postalCode.startsWith('75') || city.toLowerCase().includes('paris');
+    const isClamart = postalCode.startsWith('92140') || city.toLowerCase().includes('clamart');
+
+    if (!isParis && !isClamart) {
+      if (step2ErrorPanel && step2ErrorText) {
+        step2ErrorText.innerHTML = `
+          <div class="space-y-2 text-left">
+            <p class="font-bold text-red-950 flex items-center gap-1.5 text-sm">
+              <span>📍</span> Zone de livraison non éligible
+            </p>
+            <p class="text-xs text-red-800 leading-relaxed">
+              Nous vendons notre miel d'exception <strong>exclusivement en direct et en physique (main propre ou dépôts-vente partenaires)</strong> à proximité de chez nous afin de privilégier un circuit ultra-court.
+            </p>
+            <p class="text-xs text-red-800 font-semibold">
+              Pour commander, votre adresse de livraison doit être située à Paris (75xxx) ou Clamart (92140).
+            </p>
+          </div>
+        `;
         step2ErrorPanel.classList.remove('hidden');
         step2ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
@@ -1166,7 +1068,7 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     shippingOptionsList.innerHTML = `
       <div class="flex items-center gap-3 p-4 bg-stone-50 border border-stone-200 rounded-2xl">
         <div class="h-5 w-5 border-2 border-amber-600 border-t-transparent animate-spin rounded-full"></div>
-        <p class="text-xs text-stone-500 font-medium">Recherche des meilleurs tarifs postaux...</p>
+        <p class="text-xs text-stone-500 font-medium">Recherche des meilleurs modes de retrait...</p>
       </div>
     `;
 
@@ -1177,66 +1079,66 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
       if (availableStandardOptions.length === 0) {
         shippingOptionsList.innerHTML = `
           <div class="p-4 bg-red-50 border border-red-100 rounded-2xl text-xs text-red-700">
-            Aucun mode de livraison n'est configuré pour cette adresse. Veuillez modifier vos coordonnées.
+            Aucun mode de livraison n'est configuré dans le système pour cette adresse. Veuillez modifier vos coordonnées.
           </div>
         `;
         submitStep3Btn?.setAttribute('disabled', 'true');
         return;
       }
 
-      const isEligible = isLocalDeliveryEligible();
-      let localOptionHtml = '';
-      if (isEligible) {
-        localOptionHtml = `
-          <label class="flex items-start gap-4 bg-white hover:bg-amber-50/10 p-5 rounded-2xl border border-amber-500 bg-amber-50/20 hover:border-amber-500/50 transition-all duration-300 cursor-pointer shadow-sm relative shipping-option-label animate-fade-in" data-id="so_local_pickup">
-            <input 
-              type="radio" 
-              name="shipping_option" 
-              value="so_local_pickup" 
-              class="mt-1 accent-amber-600 shipping-option-radio"
-              checked
-              data-name="Retrait en main propre (Paris & Montrouge)"
-              data-amount="0"
-            />
-            <div class="flex-grow min-w-0 -mt-0.5">
-              <div class="flex items-center justify-between gap-2">
-                <h4 class="text-sm font-bold text-amber-950 flex items-center gap-1.5">
-                  <span>🤝</span>
-                  <span>Retrait en main propre & Dépôt-vente</span>
-                </h4>
-                <span class="text-sm font-extrabold text-amber-900">Offert</span>
-              </div>
-              <p class="text-xs text-amber-800 mt-1">Réservé aux alentours de Paris et Montrouge. Remise physique contre paiement en espèces ou virement.</p>
+      // Proposer EXCLUSIVEMENT le Retrait en main propre (avec Paris et Clamart)
+      const localOptionHtml = `
+        <label class="flex items-start gap-4 bg-white hover:bg-amber-50/10 p-5 rounded-2xl border border-amber-500 bg-amber-50/20 hover:border-amber-500/50 transition-all duration-300 cursor-pointer shadow-sm relative shipping-option-label animate-fade-in" data-id="so_local_pickup">
+          <input 
+            type="radio" 
+            name="shipping_option" 
+            value="so_local_pickup" 
+            class="mt-1 accent-amber-600 shipping-option-radio"
+            checked
+            data-name="Retrait en main propre (Paris & Clamart)"
+            data-amount="0"
+          />
+          <div class="flex-grow min-w-0 -mt-0.5">
+            <div class="flex items-center justify-between gap-2">
+              <h4 class="text-sm font-bold text-amber-950 flex items-center gap-1.5">
+                <span>🤝</span>
+                <span>Retrait en main propre & Dépôt-vente</span>
+              </h4>
+              <span class="text-sm font-extrabold text-amber-900">Offert</span>
             </div>
-          </label>
-        `;
-      }
+            <p class="text-xs text-amber-800 mt-1">Réservé aux alentours de Paris et Clamart. Remise physique contre paiement en espèces ou virement.</p>
+          </div>
+        </label>
+      `;
 
-      const standardOptionsHtml = availableStandardOptions.map((opt: any, index: number) => {
-        const isChecked = !isEligible && index === 0;
-        return `
-          <label class="flex items-start gap-4 bg-white hover:bg-amber-50/10 p-5 rounded-2xl border ${isChecked ? 'border-amber-500 bg-amber-50/20' : 'border-stone-200'} hover:border-amber-500/50 transition-all duration-300 cursor-pointer shadow-sm relative shipping-option-label" data-id="${opt.id}">
-            <input 
-              type="radio" 
-              name="shipping_option" 
-              value="${opt.id}" 
-              class="mt-1 accent-amber-600 shipping-option-radio"
-              ${isChecked ? 'checked' : ''}
-              data-name="${opt.name}"
-              data-amount="${opt.calculated_price?.calculated_amount ?? 0}"
-            />
-            <div class="flex-grow min-w-0 -mt-0.5">
-              <div class="flex items-center justify-between gap-2">
-                <h4 class="text-sm font-bold text-amber-950">${opt.name}</h4>
-                <span class="text-sm font-extrabold text-amber-900">${opt.calculated_price?.calculated_amount === 0 ? 'Offert' : formatPrice(opt.calculated_price?.calculated_amount ?? 0)}</span>
-              </div>
-              <p class="text-xs text-stone-400 mt-1">${opt.type?.description || 'Livraison standard à domicile'}</p>
-            </div>
-          </label>
-        `;
-      }).join('');
+      shippingOptionsList.innerHTML = localOptionHtml;
 
-      shippingOptionsList.innerHTML = localOptionHtml + standardOptionsHtml;
+      // Câbler le changement de sélection pour effet visuel de bordure
+      const radios = document.querySelectorAll('.shipping-option-radio');
+      radios.forEach((r: any) => {
+        r.addEventListener('change', () => {
+          document.querySelectorAll('.shipping-option-label').forEach((lbl: any) => {
+            lbl.classList.remove('border-amber-500', 'bg-amber-50/20');
+            lbl.classList.add('border-stone-200');
+          });
+          const label = r.closest('.shipping-option-label');
+          label?.classList.remove('border-stone-200');
+          label?.classList.add('border-amber-500', 'bg-amber-50/20');
+        });
+      });
+
+      submitStep3Btn?.removeAttribute('disabled');
+
+    } catch (e) {
+      console.error(e);
+      shippingOptionsList.innerHTML = `
+        <div class="p-4 bg-red-50 border border-red-100 rounded-2xl text-xs text-red-750">
+          Une erreur est survenue lors de la récupération des options de livraison. Veuillez vérifier votre connexion.
+        </div>
+      `;
+      submitStep3Btn?.setAttribute('disabled', 'true');
+    }
+  }
 
       // Câbler le changement de sélection pour effet visuel de bordure
       const radios = document.querySelectorAll('.shipping-option-radio');
@@ -1335,130 +1237,59 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
     }
   });
 
-  // ÉTAPE 4 : Validation finale du paiement (COMPLETE DU CHECKOUT AVEC STRIPE OU RETRAIT LOCAL)
+  // ÉTAPE 4 : Validation finale (Réservation physique)
   submitFinalBtn?.addEventListener('click', async () => {
     // Réinitialiser les erreurs
     step4ErrorPanel?.classList.add('hidden');
 
-    // S'assurer que Stripe est bien initialisé et qu'on a le client secret (seulement en mode standard)
-    if (!isLocalPickupSelected && (!stripeInstance || !cardElementInstance || !elementsInstance || !stripeClientSecret)) {
-      if (step4ErrorPanel && step4ErrorText) {
-        step4ErrorText.innerText = "Le service de paiement Stripe n'a pas été initialisé correctement. Veuillez rafraîchir la page et réessayer.";
-        step4ErrorPanel.classList.remove('hidden');
-        step4ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
-    }
-
     // Loader sur le bouton final
     submitFinalBtn.setAttribute('disabled', 'true');
-    const origBtnContent = submitFinalBtn.innerHTML;
-    submitFinalBtn.innerHTML = isLocalPickupSelected ? `
+    submitFinalBtn.innerHTML = `
       <span>Réservation de votre commande...</span>
       <div class="h-5 w-5 border-2 border-stone-900 border-t-transparent animate-spin rounded-full"></div>
-    ` : `
-      <span>Paiement sécurisé en cours...</span>
-      <div class="h-5 w-5 border-2 border-amber-950 border-t-transparent animate-spin rounded-full"></div>
     `;
 
     try {
-      if (isLocalPickupSelected) {
-        // Mode Retrait physique : finalisation directe du panier Medusa v2
-        const completeRes = await storeFetch(`/carts/${cartId}/complete`, {
-          method: 'POST'
-        });
-
-        if (completeRes.type === 'order' && completeRes.order) {
-          const order = completeRes.order;
-          
-          // Nettoyer localement le panier
-          localStorage.removeItem('medusa_cart_id');
-          cartId = null;
-
-          // Déclencher un événement global pour mettre à jour les compteurs du panier
-          window.dispatchEvent(new Event('cart-updated'));
-
-          // Afficher l'écran de succès premium
-          showSuccessState(order);
-
-        } else {
-          throw new Error('La finalisation du panier n\'a pas retourné de commande dans Medusa.');
-        }
-        return;
-      }
-
-      // 1. Confirmer le paiement avec Stripe Elements (Payment Element)
-      const confirmRes = await stripeInstance.confirmPayment({
-        elements: elementsInstance,
-        confirmParams: {
-          payment_method_data: {
-            billing_details: {
-              name: `${firstNameInput?.value || ''} ${lastNameInput?.value || ''}`.trim() || undefined,
-              email: emailInput?.value || undefined,
-              phone: phoneInput?.value || undefined,
-              address: {
-                line1: addressInput?.value || undefined,
-                city: cityInput?.value || undefined,
-                postal_code: postalCodeInput?.value || undefined,
-                country: 'FR'
-              }
-            }
-          },
-          return_url: `${window.location.origin}/commande?success=true&cart_id=${cartId}`
-        },
-        redirect: 'if_required'
+      // Mode Retrait physique : finalisation directe du panier Medusa v2
+      const completeRes = await storeFetch(`/carts/${cartId}/complete`, {
+        method: 'POST'
       });
 
-      if (confirmRes.error) {
-        throw new Error(confirmRes.error.message);
-      }
-
-      // 2. Si le paiement est validé chez Stripe (ou s'il réussit inline sans redirection)
-      if (confirmRes.paymentIntent && (confirmRes.paymentIntent.status === 'succeeded' || confirmRes.paymentIntent.status === 'requires_capture')) {
+      if (completeRes.type === 'order' && completeRes.order) {
+        const order = completeRes.order;
         
-        // Mettre à jour l'affichage pour la phase finale
-        submitFinalBtn.innerHTML = `
-          <span>Enregistrement de votre commande...</span>
-          <div class="h-5 w-5 border-2 border-amber-950 border-t-transparent animate-spin rounded-full"></div>
-        `;
+        // Nettoyer localement le panier
+        localStorage.removeItem('medusa_cart_id');
+        cartId = null;
 
-        const completeRes = await storeFetch(`/carts/${cartId}/complete`, {
-          method: 'POST'
-        });
+        // Déclencher un événement global pour mettre à jour les compteurs du panier
+        window.dispatchEvent(new Event('cart-updated'));
 
-        if (completeRes.type === 'order' && completeRes.order) {
-          const order = completeRes.order;
-          
-          // Nettoyer localement le panier
-          localStorage.removeItem('medusa_cart_id');
-          cartId = null;
+        // Afficher l'écran de succès premium
+        showSuccessState(order);
 
-          // Déclencher un événement global pour mettre à jour les compteurs du panier
-          window.dispatchEvent(new Event('cart-updated'));
-
-          // Afficher l'écran de succès premium
-          showSuccessState(order);
-
-        } else {
-          throw new Error('La finalisation du panier n\'a pas retourné de commande dans Medusa.');
-        }
       } else {
-        throw new Error('La transaction de paiement n\'a pas pu être validée par Stripe.');
+        throw new Error('La finalisation du panier n\'a pas retourné de commande dans Medusa.');
       }
 
     } catch (err: any) {
-      console.error('Finalisation du checkout Stripe échouée', err);
+      console.error('Finalisation du checkout échouée', err);
       if (step4ErrorPanel && step4ErrorText) {
         if (err.message.includes('Network') || err.message.includes('réseau')) {
           step4ErrorText.innerText = 'Une erreur réseau est survenue lors de la validation. Veuillez vérifier votre connexion et cliquer de nouveau pour réessayer.';
         } else {
-          step4ErrorText.innerText = err.message || 'Une erreur inattendue est survenue lors de la validation de votre paiement. Veuillez réessayer.';
+          step4ErrorText.innerText = err.message || 'Une erreur inattendue est survenue lors de la validation de votre réservation. Veuillez réessayer.';
         }
         step4ErrorPanel.classList.remove('hidden');
         step4ErrorPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       submitFinalBtn.removeAttribute('disabled');
-      submitFinalBtn.innerHTML = origBtnContent;
+      submitFinalBtn.innerHTML = `
+        <span>Réserver et Finaliser ma commande</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="h-5 w-5 flex-shrink-0 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      `;
     }
   });
 

@@ -7,20 +7,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — versioning:
 ## [Unreleased]
 
 ### Added
-- Option de **Retrait en main propre & Dépôt-vente** pour les résidents de **Paris** (code postal commençant par `75` ou ville contenant "paris") et **Montrouge** (code postal `92120` ou ville contenant "montrouge"), intégrée dynamiquement à l'Étape 3 du checkout.
-- Système de **Paiement de la main à la main (espèces / virement physique)** pour le retrait local, masquant le formulaire Stripe Elements à l'Étape 4 et affichant à la place un panneau de réservation premium transparent avec les coordonnées directes de contact.
-- Finalisation directe du panier Medusa v2 (`POST /carts/:id/complete`) sans passer par Stripe lors de la sélection du retrait local, en associant de manière transparente un mode d'expédition standard par défaut pour satisfaire les contraintes du backend Medusa tout en affichant un coût d'expédition nul à l'acheteur.
-- Écran de succès personnalisé pour le retrait local, masquant le suivi de colis Colissimo standard pour afficher à la place les instructions et coordonnées de contact (Téléphone: `06 00 00 00 00`, Email: `contact@lamiellerieroyale.fr`) afin de fixer le rendez-vous.
+- **Système de Vente Directe Locale & Clamart (92140)** : Adaptation de l'éligibilité locale de Montrouge à Clamart (92140) et Paris (codes postaux commençant par `75`).
+- **Blocage Géographique Strict (Étape 2)** : Ajout d'une validation stricte interdisant la commande aux clients hors secteurs éligibles (Paris / Clamart), avec affichage d'un panneau d'alerte rouge premium en verre poli.
+- **Désactivation Totale des Paiements en Ligne** : Masquage complet du module Stripe Elements, suppression de l'injection du script externe Stripe SDK, et neutralisation des flux Google Pay/cartes de crédit pour privilégier le paiement physique à la livraison.
+- **Réservation Directe (Étape 4)** : Soumission directe et finalisation immédiate du panier Medusa v2 (`POST /carts/:id/complete`) sous session manuelle système (`pp_system_default`) sans intermédiaire financier.
+- **Option d'expédition unique (Étape 3)** : Forçage du mode "Retrait en main propre & Dépôt-vente" gratuit à 0,00 € pour tous les utilisateurs éligibles, en masquant complètement les modes de livraison postaux classiques.
+- **Écran de Succès et Coordonnées Directes** : Affichage d'un écran de confirmation de réservation avec coordonnées de contact (téléphone/email) pour convenir d'un créneau de retrait physique.
 - Rendu dynamique des photos de produits sur tout le site (page d'accueil, catalogue de la boutique, et fiches produits) avec fallback automatique sur la première image de la galerie de Medusa si le thumbnail n'est pas renseigné, évitant ainsi l'émoji de repli par défaut 🍯 lorsque des photos existent.
 - Données Structurées JSON-LD intégrées à la volée dans le `<head>` de la mise en page générale (`Layout.astro`) de type `Store`, et sur les fiches produits (`boutique/[handle]` et `produits/[handle]`) de type `Product` pour une indexation sémantique (SEO) optimale.
 - Cartes de produits de la page d'accueil cliquables : enveloppement du visuel pot de miel 🍯 et du titre `h3` dans des balises `<a>` pointant vers `/boutique/[handle]` (dans le bloc CMS et le repli HTML).
 - Barre de navigation auto-adaptative (Dynamic Navbar) : récupération, filtrage (exclusion de `home`/`boutique`) et tri automatique (via `navbarOrder`) des pages du CMS dans `Layout.astro`, avec fallback raffiné.
 - Routeur universel catch-all à la racine (`src/pages/[slug].astro`) pre-générant à la compilation (SSG) toutes les pages éditées dans Payload.
 - Prise en charge des 8 types de blocs de mise en page CMS (`hero`, `pageHeader`, `values`, `story`, `engagements`, `quote`, `featuredProducts`, `latestPosts`) dans le rendu dynamique du routeur.
-- Intégration du moderne **Stripe Payment Element (Option B)** au tunnel de checkout (`/commande`), offrant le support automatique de **Google Pay** et des cartes bancaires.
-- Désactivation explicite d'Apple Pay (`wallets: { applePay: 'never' }`) pour respecter les contraintes budgétaires sans impacter le support de Google Pay.
-- Mécanisme de double confirmation du paiement : inline sans rechargement pour les flux directs via `redirect: 'if_required'`, et parseur de retour de redirection (3D Secure) dans `init()` complétant le panier Medusa de manière résiliente.
-- Personnalisation esthétique complète de l'élément de paiement Stripe (couleurs ambre et pierre HSL, typographie Outfit, angles adoucis) pour s'harmoniser avec la vitrine.
+
+### Changed
+- Remplacement du Stripe Payment Element par le panneau de réservation de paiement de la main à la main suite à la décision stratégique d'exclure les paiements en ligne.
 
 ### Fixed
 - JavaScript de la galerie d'images sur la fiche produit : correction du bug de closure en récupérant dynamiquement le nœud d'image principal dans le DOM à chaque clic, garantissant une mise à jour robuste et sans duplication.
