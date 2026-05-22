@@ -1139,34 +1139,6 @@ const PUBLIC_STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_KEY ?? '';
       submitStep3Btn?.setAttribute('disabled', 'true');
     }
   }
-
-      // Câbler le changement de sélection pour effet visuel de bordure
-      const radios = document.querySelectorAll('.shipping-option-radio');
-      radios.forEach((r: any) => {
-        r.addEventListener('change', () => {
-          document.querySelectorAll('.shipping-option-label').forEach((lbl: any) => {
-            lbl.classList.remove('border-amber-500', 'bg-amber-50/20');
-            lbl.classList.add('border-stone-200');
-          });
-          const label = r.closest('.shipping-option-label');
-          label?.classList.remove('border-stone-200');
-          label?.classList.add('border-amber-500', 'bg-amber-50/20');
-        });
-      });
-
-      submitStep3Btn?.removeAttribute('disabled');
-
-    } catch (e) {
-      console.error(e);
-      shippingOptionsList.innerHTML = `
-        <div class="p-4 bg-red-50 border border-red-100 rounded-2xl text-xs text-red-750">
-          Une erreur est survenue lors de la récupération des options de livraison. Veuillez vérifier votre connexion.
-        </div>
-      `;
-      submitStep3Btn?.setAttribute('disabled', 'true');
-    }
-  }
-
   // ÉTAPE 3 : Validation de la livraison
   submitStep3Btn?.addEventListener('click', async () => {
     // Réinitialiser les erreurs
